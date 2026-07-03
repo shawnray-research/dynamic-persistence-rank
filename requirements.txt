@@ -1,0 +1,2 @@
+# Python 3.8+.  Standard library only, except:
+networkx>=2.6   # used only by genus.py and treewidth.py (Part II)
