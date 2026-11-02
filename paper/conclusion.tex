@@ -1,0 +1,45 @@
+\section{Conclusion and open problems}\label{sec:conclusion}
+
+We showed that, for every $p\ge1$, maintaining $\beta_p$ under simplex insertions and deletions is dynamic matrix rank in disguise.
+Over $\Ftwo$, and over every field for matrices with entries in $\{0,\pm1\}$, the two problems reduce to each other with constant overhead, through a gadget in which every matrix operation is a constant number of local changes to a $2$-complex.
+Hence every lower bound for dynamic rank of $0/1$ matrices, measured in the instance size, is a lower bound for dynamic Betti numbers, and every dynamic-rank algorithm is a dynamic-Betti algorithm.
+Under the \OMv\ conjecture, this rules out data structures with polynomial preprocessing time, amortized update time $n^{1/2-\eps}$, and query time $n^{1-\eps}$, robustly across fields, dimensions, degree bounds, embeddings in~$\R^4$, Vietoris--Rips complexes, zigzag persistence, and instances with almost no homology.
+
+For the design of algorithms, the message is that, under the \OMv\ conjecture, amortized update time $n^{1/2-\eps}$ together with query time $n^{1-\eps}$ is out of reach for homology in dimension at least one unless the universe has structure beyond its size; the \uMv-hinted \uMv\ conjecture extends this, over every field, to worst-case update and query time $n^{\alpha/2-\eps}$, where $\alpha/2\ge5/8$, and $\alpha/2\approx0.703$ for the current bounds on matrix multiplication.
+Section~\ref{sec:easy} identifies two such structures, an embedding in~$\R^3$ and a Hasse diagram of bounded treewidth, under which all Betti numbers can be maintained in polylogarithmic time per update.
+Without such structure, a data structure that maintains Betti numbers under insertions and deletions in general $2$-complexes is, up to constant factors, a data structure for dynamic matrix rank.
+We close with open problems.
+
+\begin{enumerate}[leftmargin=*]
+\item \emph{The exponent.}
+For amortized update time with query time $n^{1-\eps}$, the best lower bound is $n^{1/2-o(1)}$ (Theorem~\ref{thm:omv}), while the best algorithm, inherited from dynamic rank, takes $O(n^{1.407})$ worst-case time per update (Corollary~\ref{cor:upper}).
+Our hard instances encode dense $\ell\times\ell$ matrices with $\ell=\Theta(\sqrt n)$, so a lower bound proved with operation sequences of this kind, in which every complex has the form $K(M;R,J)$, cannot exceed $O(\ell^{1.407})=O(n^{0.7035})$, because an algorithm that knows the encoding can run the algorithm of van den Brand, Nanongkai, and Saranurak~\cite{vdBNS19} on the encoded matrix.
+Over $\Ftwo$, Theorem~\ref{thm:equiv} shows that the gap coincides, up to constant factors, with the gap for dynamic rank of matrices with $m$ admissible positions, measured in the instance size $N=r+k+m$.
+Closing it for either problem closes it for both.
+In particular, it is open whether any data structure maintains $\beta_1$ of $2$-complexes, or equivalently the rank of a sparse matrix over~$\Ftwo$, with update and query time $O(n^{1-\delta})$ for some $\delta>0$.
+\item \emph{Vineyards.}
+In the transposition model of vines and vineyards~\cite{CEMS06}, the filtration order changes by swapping two consecutive simplices, and the data structure maintains the persistence pairing, which changes in at most two pairs.
+Our lower bounds do not apply: moving a simplex across the threshold of a sublevel set takes up to $n-1$ transpositions.
+For graph filtrations of length~$L$, Dey, Hou, and Parsa~\cite{DHP23} perform a transposition in $O(\log L)$ time.
+Is linear time per transposition optimal for $2$-complexes?
+\item \emph{Amortized partially dynamic bounds.}
+Theorem~\ref{thm:partial} needs worst-case update time, because rolling back operations defeats amortization.
+An insertion-only sequence is a filtration.
+Does incremental $\beta_1$ of $2$-complexes admit amortized update time $n^{1/2-\eps}$ with query time $n^{1-\eps}$?
+Dahlgaard~\cite{Dah16} proved amortized conditional lower bounds for some partially dynamic graph problems, such as maximum flow and bipartite matching; we do not know whether these techniques apply here.
+\item \emph{Bounded degree and little homology together.}
+Our hard instances can have bounded degree (Theorem~\ref{thm:bdeg}) or Betti numbers at most one (Theorem~\ref{thm:acyclic}), but we do not know how to achieve both at once.
+\item \emph{Fixed ambient dimension.}
+Theorem~\ref{thm:flag} gives hardness for Vietoris--Rips complexes of points in dimension $O(\log n)$.
+Does it hold for points in a fixed dimension $d\ge3$? The static reduction of Kolbe and Mayr~\cite{KM26}, which works for point sets of small doubling dimension, suggests a route.
+And does the lower bound hold for subcomplexes of a triangulation of the $4$-sphere with $O(n)$ simplices?
+For their static construction, Edelsbrunner and Parsa remark that the whole space can be triangulated around their complex in linear time~\cite{EP14}, which suggests that the answer to the last question may be positive.
+Finally, Corollary~\ref{cor:anyR3} maintains Betti numbers, not persistence: can the persistent Betti numbers of Problem~\ref{prob:sublevel} be maintained in polylogarithmic time per value update on a fixed universe in~$\R^3$, for instance for alpha-complex filtrations?
+\item \emph{Structure beyond size.}
+Small homology alone does not help (Theorem~\ref{thm:acyclic}), and neither does bounded degree (Theorem~\ref{thm:bdeg}), whereas an embedding in~$\R^3$ (Corollary~\ref{cor:anyR3}) and bounded treewidth of the Hasse diagram (Corollary~\ref{cor:tw-betti}) do.
+Which other structural parameters help?
+For example, does the algorithm for the $3$-sphere extend to subcomplexes of other triangulated $3$-manifolds, and can the treewidth structure support entry updates rather than only column switches?
+\end{enumerate}
+
+\paragraph{Supplementary material.}
+Code that checks the combinatorial identities used in our proofs by brute-force homology computations over $\Ftwo$, $\F_3$, $\F_5$, and $\F_7$, on random instances and exhaustively on small ones, is available in the folder \texttt{verification} of the branch \texttt{paper-v3} of the repository \url{https://github.com/shawnray-research/dynamic-persistence-rank}. No proof relies on it.

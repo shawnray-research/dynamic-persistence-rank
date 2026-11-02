@@ -1,0 +1,102 @@
+\section{Preliminaries}\label{sec:prelim}
+
+\paragraph{Complexes and homology.}
+A (finite, abstract) \emph{simplicial complex} $K$ is a finite family of nonempty finite sets, called \emph{simplices}, that is closed under taking nonempty subsets.
+A simplex with $p+1$ elements is a \emph{$p$-simplex}; for $p\ge1$ its \emph{facets} are its $p$-element subsets, and it is a \emph{cofacet} of each of them; a vertex has no facets.
+We call $0$-, $1$-, $2$-, and $3$-simplices \emph{vertices}, \emph{edges}, \emph{triangles}, and \emph{tetrahedra}, and the \emph{$1$-skeleton} $K^{(1)}$ of $K$ consists of its vertices and edges.
+We write $K_p$ for the set of $p$-simplices, $n_p(K)=|K_p|$, and $\dim K$ for the largest $p$ with $K_p\ne\emptyset$; a \emph{$d$-complex} is a simplicial complex of dimension at most~$d$.
+A \emph{subcomplex} of $K$ is a subset of $K$ that is itself a simplicial complex.
+We use standard facts from homology theory~\cite{Mun84,Hat02,EH10}, which we recall briefly.
+Fix a field $\F$.
+The $p$-chains $C_p(K)$ form the $\F$-vector space with basis $K_p$, where each simplex carries a fixed orientation, that is, an ordering of its vertices up to even permutations.
+The boundary map $\bd_p\colon C_p(K)\to C_{p-1}(K)$ is the linear map with $\bd_p[v_0,\dots,v_p]=\sum_{i=0}^{p}(-1)^i[v_0,\dots,\widehat{v_i},\dots,v_p]$, where the hat marks an omitted vertex.
+A simplex whose vertices are listed in another order denotes $\pm$ the basis element: $[v_{\pi(0)},\dots,v_{\pi(p)}]=\operatorname{sgn}(\pi)[v_0,\dots,v_p]$, so for instance $[x,y]=-[y,x]$.
+An oriented triangle $[x,y,z]$ induces on its edges the orientations $[x,y]$, $[y,z]$, $[z,x]$ that occur in its boundary, and two triangles with a common edge induce \emph{opposite} orientations on it if these differ by the sign~$-1$.
+Over $\Ftwo$, orientations and signs play no role.
+Since $\bd_p\circ\bd_{p+1}=0$, the \emph{$p$-boundaries}, the elements of $\operatorname{im}\bd_{p+1}$, lie in the space $Z_p(K)=\ker\bd_p$ of \emph{$p$-cycles}.
+The \emph{$p$-th homology group} is $H_p(K;\F)=Z_p(K)/\operatorname{im}\bd_{p+1}$, and the \emph{$p$-th Betti number} is $\beta_p(K)=\dim H_p(K;\F)=\dim Z_p(K)-\rk\bd_{p+1}$.
+Writing $\bd_p$ also for its matrix with respect to the simplex bases, the rank--nullity theorem gives
+\begin{equation}\label{eq:betti-rank}
+  \beta_p(K)\;=\;n_p(K)-\rk\bd_p-\rk\bd_{p+1}\qquad(\text{with } \rk\bd_0=0).
+\end{equation}
+The \emph{Euler characteristic} is $\chi(K)=\sum_p(-1)^p n_p(K)$, and the Euler--Poincar\'e formula states that $\chi(K)=\sum_p(-1)^p\beta_p(K)$ over every field.
+Over $\Ftwo$, a $2$-cycle is simply a set of triangles in which every edge lies in an even number of triangles; the gadget of Section~\ref{sec:equiv} rests on this picture.
+If $\dim K\le 2$, then $K$ has no $3$-simplices, so $\bd_3=0$ and $H_2(K)=Z_2(K)$; hence
+\begin{equation}\label{eq:euler}
+  \beta_2(K)=\dim Z_2(K)\qquad\text{and}\qquad \beta_1(K)=\beta_0(K)+\beta_2(K)-\chi(K).
+\end{equation}
+For a matrix $A$ with rows indexed by $[r]=\{1,\dots,r\}$ and columns by $[k]$, and for $R\subseteq[r]$ and $J\subseteq[k]$, we write $A[R,J]$ for the submatrix on rows~$R$ and columns~$J$, and $\supp(A)$ for the set of positions of its nonzero entries. We write $X\triangle Y$ for the symmetric difference of two sets, and $\supp u=\{i:u_i\ne0\}$ for the support of a vector~$u$.
+
+\paragraph{Dynamic problems.}
+All our problems have the same shape.
+An instance is fixed in advance and may be preprocessed.
+Then an online sequence of \emph{updates} and \emph{queries} arrives, and each query must be answered before the next operation is revealed.
+A data structure for instances of size~$n$ has preprocessing time $t_{\mathrm{pre}}$, \emph{amortized} update time~$u$, and query time~$q$ if its preprocessing takes time at most $t_{\mathrm{pre}}$ and, afterwards, every sequence of $t$ updates interleaved with $s$ queries takes total time $O((n+t)\cdot u+s\cdot q)$; it has \emph{worst-case} update time~$u$ and query time~$q$ if every single update takes time $O(u)$ and every single query takes time $O(q)$.
+Worst-case bounds imply amortized bounds, and the term $n\cdot u$ prevents a data structure from postponing its preprocessing into the updates.
+Running times refer to the word RAM with words of $\Theta(\log n)$ bits, the model in which the \OMv\ conjecture is stated, so our lower bounds over every field, including~$\mathbb{Q}$ and~$\R$, apply to word-RAM data structures.
+Algorithms that count field operations at unit cost (Corollary~\ref{cor:upper} and Section~\ref{sec:easy-width}) are stated in the algebraic model; over a prime field of polynomial size, a field operation takes $O(1)$ word operations.
+
+\begin{problem}[Dynamic Betti numbers]\label{prob:betti}
+Fix a field $\F$ and an integer $p\ge0$.
+The instance is a simplicial complex $\cU$, the \emph{universe}, with $n=|\cU|$ simplices.
+The data structure maintains a subcomplex $K\subseteq\cU$, initially empty, under the operations
+\begin{itemize}
+\item $\Insert(\sigma)$, for $\sigma\in\cU\setminus K$ all of whose facets lie in $K$, which replaces $K$ by $K\cup\{\sigma\}$;
+\item $\Delete(\sigma)$, for $\sigma\in K$ none of whose cofacets lies in $K$, which replaces $K$ by $K\setminus\{\sigma\}$;
+\item $\Query$, which returns $\beta_p(K;\F)$.
+\end{itemize}
+\end{problem}
+
+The preconditions guarantee that $K$ is a subcomplex after every operation.
+We write \emph{dynamic $\beta_p$ over~$\F$} for Problem~\ref{prob:betti} with parameters $p$ and~$\F$, and \emph{dynamic $\beta_p$ of $d$-complexes} for its restriction to universes of dimension at most~$d$; the size of an instance is $n=|\cU|$.
+We call $\Insert$ and $\Delete$ \emph{simplex updates}.
+Knowing the universe in advance can only help an algorithm, so our lower bounds also hold when the universe is revealed online.
+Our algorithms also assume a fixed universe, for example a fixed triangulation of the $3$-sphere (Section~\ref{sec:easy}).
+
+Our version of dynamic rank has two features that the standard version lacks.
+A set $P$ fixes in advance the positions that may ever hold a nonzero entry, so that the size of an instance can reflect sparsity.
+And a \emph{switch} includes or excludes a whole row or column at unit cost.
+
+\begin{problem}[Dynamic rank]\label{prob:rank}
+Fix a field $\F$.
+The instance consists of integers $r,k$ and a set $P\subseteq[r]\times[k]$ of \emph{admissible positions}, with $m=|P|$.
+The data structure maintains a matrix $A\in\F^{r\times k}$ with $\supp(A)\subseteq P$, a set $R\subseteq[r]$ of \emph{active rows}, and a set $J\subseteq[k]$ of \emph{active columns}.
+Initially $A=0$, $R=[r]$, and $J=[k]$.
+The operations are:
+\begin{itemize}
+\item $\Set(i,j,x)$, for $(i,j)\in P$ and $x\in\F$, which sets $A_{ij}=x$;
+\item $\Toggle(\text{row }i)$, which adds $i$ to $R$ if $i\notin R$ and removes it otherwise, and $\Toggle(\text{column }j)$, which does the same for $j$ and~$J$;
+\item $\Query$, which returns $\rk A[R,J]$.
+\end{itemize}
+\end{problem}
+
+We call $\Set$ an \emph{entry update} and $\Toggle$ a \emph{switch}.
+The size of an instance is $N=r+k+m$.
+Dynamic rank of an $s\times s$ matrix under entry updates~\cite{FF09,San07,vdBNS19} is the special case $r=k=s$ and $P=[s]\times[s]$ without switches; its size is $N=2s+s^2$.
+For a set $S\subseteq\F$ with $0\in S$, \emph{dynamic rank of $S$-matrices} is the special case in which every update $\Set(i,j,x)$ has $x\in S$; we use $S=\{0,1\}$ and $S=\{0,\pm1\}$.
+For a $0/1$ matrix, an \emph{entry flip} is the update $\Set(i,j,1-A_{ij})$.
+Switches do not make the problem harder: if $X_R$ is the diagonal $r\times r$ matrix with $(X_R)_{ii}=1$ for $i\notin R$ and $0$ otherwise, and $Y_J$ is defined in the same way, then
+\begin{equation}\label{eq:padding}
+  \rk\begin{pmatrix}A&X_R\\Y_J&0\end{pmatrix}=\rk A[R,J]+(r-|R|)+(k-|J|),
+\end{equation}
+so a switch becomes a single entry update of a padded matrix of linear size; we call~\eqref{eq:padding} the \emph{padding identity}.
+We keep switches as primitive operations because our gadget implements each of them with a single simplex update.
+
+\paragraph{Reductions.}
+We say that a dynamic problem $\Pi$ \emph{reduces to} a dynamic problem $\Pi'$ \emph{with overhead $(a,b)$} if there is a polynomial-time map from instances of~$\Pi$ of size~$N$ to instances of $\Pi'$ of size $O(N)$ with the following properties.
+During preprocessing, the reduction may perform $O(N)$ updates of $\Pi'$ to create its initial state.
+Afterwards, every update of $\Pi$ is carried out by at most $a$ updates of $\Pi'$ plus $O(a)$ extra time, and every query of $\Pi$ is answered by at most $b$ queries of $\Pi'$ plus $O(b)$ extra time.
+If $a$ and $b$ are constants, a data structure for $\Pi'$ with update time $u(N)$ and query time $q(N)$ yields one for $\Pi$ with update time $O(u(O(N)))$ and query time $O(q(O(N)))$, both in the amortized and in the worst-case sense; the preprocessing time grows by $O(N\cdot u(O(N)))$ plus a polynomial.
+Reductions compose: overheads $(a,b)$ and $(a',b')$ give overhead $(aa',bb')$, sizes stay linear, and preprocessing stays a linear number of updates.
+An update names a simplex or an admissible position by its index in an enumeration fixed during preprocessing.
+All reductions in this paper are deterministic, except that the proof of Theorem~\ref{thm:acyclic} uses random probes, the proof of Corollary~\ref{cor:hinted} draws random masks, and the proof of Theorem~\ref{thm:flag} draws a random embedding during preprocessing; the \OMv\ conjecture, and the \uMv-hinted \uMv\ conjecture as we read it (Section~\ref{sec:lower-worst}), cover randomized algorithms, so the lower bounds are unaffected.
+
+\paragraph{The \OMv\ conjecture.}
+In the \emph{Online Matrix--Vector multiplication} problem (\OMv), over the Boolean semiring, an algorithm first receives a Boolean matrix $M\in\{0,1\}^{\ell\times\ell}$.
+Then vectors $v_1,\dots,v_\ell\in\{0,1\}^{\ell}$ arrive one at a time, and the algorithm must output the Boolean product $Mv_t$ before it sees $v_{t+1}$.
+The \OMv\ \emph{conjecture} states that for every $\eps>0$, no algorithm solves \OMv\ in total time $O(\ell^{3-\eps})$, including all time spent before the first vector arrives, with error probability at most $1/3$~\cite[Conjecture~1.1]{HKNS15full}.
+The fastest known algorithm takes time $\ell^3/2^{\Omega(\sqrt{\log\ell})}$~\cite{LW17}, which does not refute the conjecture.
+In the related \OuMv\ problem, each request is a pair $(u_t,v_t)$ of Boolean vectors, and the answer is the Boolean value $u_t^{\top}Mv_t=\bigvee_{i,j}u_{t,i}M_{ij}v_{t,j}$.
+Henzinger et al.~\cite[Theorem~2.7]{HKNS15full} showed that the \OMv\ conjecture implies that no algorithm that preprocesses $M$ in polynomial time solves \OuMv\ with $\ell$ requests in computation time $O(\ell^{3-\eps})$, the time spent after preprocessing, with error probability at most $1/3$.
+All our lower bounds use this form.
+Note that $u^{\top}Mv=1$ if and only if the submatrix $M[\supp u,\supp v]$ is nonzero; this observation drives our reduction.

@@ -1,0 +1,77 @@
+\section{Related work}\label{sec:related}
+
+\paragraph{Updating persistence.}
+Cohen-Steiner, Edelsbrunner, and Morozov~\cite{CEMS06} introduced vines and vineyards.
+They maintain a reduced boundary matrix while two adjacent simplices of the filtration are transposed, in time linear in the number of simplices per transposition.
+A continuously changing function is processed as a sequence of such transpositions.
+Dey and Hou~\cite{DH21u} carried this approach over to zigzag filtrations.
+They identified eight atomic operations, six of which can be executed as efficiently as their non-zigzag counterparts.
+Luo and Nelson~\cite{LN21} additionally handle insertions and deletions of cells and batches of changes.
+The cost of their scheme scales with the number of elementary changes.
+Piekenbrock and Perea~\cite{PP24} replace the long sequences of transpositions that arise when a simplex moves to a new position in the filtration by coarser moves.
+Under insertions and elementary collapses, persistence is maintained with annotations~\cite{BCCDW12,DFW14} and by the streaming algorithm for towers of Kerber and Schreiber~\cite{KS19}, and Maria and Oudot~\cite{MO15} compute zigzag persistence online, one insertion or deletion at a time.
+In the worst case, every one of these methods spends time polynomial in the size of the complex per elementary change.
+
+Sublinear updates are known in two settings.
+For graphs, Dey, Hou, and Parsa~\cite{DHP23} perform a transposition in ordinary graph persistence in $O(\log L)$ time for a filtration of length~$L$, and they update several kinds of bars of graph zigzag persistence in sublinear time.
+For time series, the banana trees of Cultrera di Montesano, Edelsbrunner, Henzinger, and Ost~\cite{CEHO24} support insertions, deletions, cuts, and concatenations in time logarithmic in the length of the series plus the number of changes of the augmented persistence diagram.
+In both settings the homology that changes is that of a graph, and graph homology reduces to connectivity.
+Our results indicate that such bounds do not extend to insertions and deletions in general $2$-complexes unless dynamic rank of sparse matrices admits them too: under the \OMv\ conjecture, amortized update time $n^{1/2-\eps}$ with query time $n^{1-\eps}$ is impossible there, whereas complexes in~$\R^3$ remain easy (Section~\ref{sec:easy-s3}).
+A transposition is a different operation from the insertions, deletions, and value changes we consider.
+Our lower bounds do not apply to it, and the complexity of vineyards remains open (Section~\ref{sec:conclusion}).
+
+\paragraph{Static complexity of Betti numbers and persistence.}
+The standard persistence algorithm~\cite{ELZ02,ZC05} reduces the boundary matrix by Gaussian elimination and takes cubic time in the worst case.
+Milosavljevi\'c, Morozov, and \v{S}kraba~\cite{MMS11} showed that persistence, and even zigzag persistence, can be computed in matrix multiplication time.
+Chen and Kerber~\cite{CK13} gave an output-sensitive algorithm.
+Over finite fields, Wiedemann's method~\cite{Wie86,KS91} computes the rank of an $n\times n$ matrix with $O(n)$ nonzero entries, and hence every Betti number of a complex of fixed dimension, in time $O(n^{2+o(1)})$, as Edelsbrunner and Parsa note~\cite{EP14}; Casacuberta and Kyng~\cite{CK22} also compute a basis of the null space of such a matrix in expected time $O(n^{2.2131})$.
+In the other direction, Edelsbrunner and Parsa~\cite{EP14} proved that, over $\Ftwo$ and over prime fields, computing the Betti numbers of a $2$-complex with $N$ simplices has the same complexity as computing the rank of an $N\times N$ $0/1$ matrix with $N$ nonzero entries.
+In their construction every column of the matrix becomes a cycle, and every row becomes a sphere with holes, triangulated with $O(h)$ simplices if it has $h$ holes, and glued to the cycles of its nonzero entries.
+They also sparsify the matrix to at most three nonzero entries per row and column~\cite[Theorem~4.1]{EP14}, a special case of the sparsification of Yuster~\cite{Yus08}, and they embed their complex in~$\R^4$ by placing its cycles in a plane and every punctured sphere in its own $3$-dimensional half-space from a pencil through that plane, even as a subcomplex of a triangulation of the whole space computed in linear time.
+Our gadget follows the same pattern, with the roles of rows and columns exchanged.
+What is new is the switches, the decomposition of each punctured sphere into constant-size sockets, which makes every entry update local, and the orientation analysis, which gives the static reduction over every field as well; our embedding of the hard universes in Section~\ref{sec:lower-r4} uses their pencil construction.
+This contrasts with complexes in $\R^3$, whose Betti numbers Delfinado and Edelsbrunner~\cite{DE95} compute in near-linear time; Dey and Guha~\cite{DG98} compute homology groups and their generators for arbitrary complexes in $\R^3$.
+The contrast between the $3$-sphere and $\R^4$ in Sections~\ref{sec:easy-s3} and~\ref{sec:lower-r4} is the dynamic counterpart of this static picture.
+Recent work extends static hardness in other directions: to sufficiently fine additive and to constant-factor multiplicative approximations of Vietoris--Rips and \v{C}ech barcodes~\cite{KM26}, and to the average case, via planted cliques, for estimating Betti numbers and deciding whether homology vanishes~\cite{SSW26}.
+Closest to our equivalence on the static side, Ding, Kyng, Probst Gutenberg, and Zhang~\cite{DKPZ22}, building on Kyng and Zhang~\cite{KZ20}, showed that solving linear equations in boundary operators and combinatorial Laplacians of $2$-complexes is as hard as solving general sparse linear equations, by a reduction that preserves sparsity up to polylogarithmic factors.
+Our gadget plays the analogous role for rank and Betti numbers; what is new is that the encoding preserves the instance size up to constant factors and is local, so that every change of an entry and every switch of a row or column costs a constant number of simplex updates.
+Embeddings in~$\R^3$ also help for Laplacian systems, which can be solved in nearly linear time, parameterized by the first Betti number, for subcomplexes of collapsible complexes embedded in~$\R^3$~\cite{BN22}, whereas for general $2$-complexes they are as hard as general sparse linear equations~\cite{DKPZ22}.
+To our knowledge, our results are the first conditional lower bounds for maintaining homology in dimension at least one under updates.
+
+\paragraph{Conditional lower bounds for dynamic problems.}
+Henzinger, Krinninger, Nanongkai, and Saranurak~\cite{HKNS15} introduced the \OMv\ conjecture.
+They derived from it tight lower bounds for many dynamic problems: amortized bounds for fully dynamic algorithms and worst-case bounds for partially dynamic ones.
+Abboud and Vassilevska Williams~\cite{AV14} obtained lower bounds for dynamic problems from other popular conjectures.
+\OMv-hardness of dynamic matrix rank over large fields was known.
+As van den Brand, Nanongkai, and Saranurak observe~\cite[Theorem~E.5]{vdBNS19full}, for row and column updates it follows from the \OMv\ lower bound for $st$-reachability~\cite{HKNS15} via bipartite matching~\cite{AV14}.
+Over every field, including $\Ftwo$, a direct and deterministic reduction from \OuMv\ to dynamic rank follows from the observation that $u^{\top}Mv=1$ exactly when $M[\supp u,\supp v]\ne0$, together with switches or the padding identity~\eqref{eq:padding} (Lemma~\ref{lem:rank-omv}).
+Composing it with our equivalence yields the lower bounds for Betti numbers, with a constant number of simplex updates per coordinate of a query vector.
+Van~den~Brand et al.\ also proposed hinted variants of \OMv.
+These imply worst-case lower bounds for dynamic matrix inverse, determinant, and rank under entry updates that match their algorithms~\cite[Corollary~5.15]{vdBNS19full}, and we discuss what they imply for Betti numbers in Section~\ref{sec:lower-worst}.
+
+\paragraph{Dynamic linear algebra.}
+Sankowski maintained the inverse and the determinant of a matrix under entry updates in subquadratic time~\cite{San04}.
+Sankowski also reduced dynamic rank to dynamic determinant with randomization~\cite{San07}.
+Frandsen and Frandsen~\cite{FF09} studied dynamic matrix rank directly.
+Van~den~Brand, Nanongkai, and Saranurak~\cite{vdBNS19} improved the update time for entry updates to $O(s^{1.407})$ in the worst case, for $s\times s$ matrices; for rank the algorithm is randomized.
+All these bounds are stated for dense matrices of a given dimension.
+Our equivalence identifies dynamic Betti numbers with dynamic rank of sparse matrices, measured by the instance size $N=r+k+m$ of Problem~\ref{prob:rank}.
+So an improvement for sparse matrices in this measure would transfer to Betti numbers, and conversely.
+
+\paragraph{Connectivity, low dimension, and bounded treewidth.}
+The zeroth Betti number is the number of connected components.
+It can be maintained in $O(\log^2 n)$ amortized time by the deterministic algorithm of Holm, de Lichtenberg, and Thorup~\cite{HDT01}, improved by Wulff-Nilsen~\cite{WN13}.
+Kapron, King, and Mountjoy~\cite{KKM13} achieve polylogarithmic worst-case time with a Monte Carlo algorithm, and Chuzhoy et al.~\cite{CGLNPS20} achieve deterministic worst-case time $n^{o(1)}$.
+The amortized bounds are optimal up to a logarithmic factor: P\u{a}tra\c{s}cu and Demaine~\cite{PD06} proved an $\Omega(\log n)$ cell-probe lower bound per operation for dynamic connectivity, and it transfers to~$\beta_0$, and hence to our algorithms for complexes in~$\R^3$.
+Eppstein~\cite{Epp03} maintains a graph embedded on a surface, together with generators of the fundamental group of the surface, in polylogarithmic amortized time per update; this is the closest precedent for our combination of duality and dynamic connectivity.
+Delfinado and Edelsbrunner~\cite{DE95} process a filtration of a triangulated $3$-sphere with two union--find structures, one on the complex and one, run backwards, on the dual graph of its complement.
+Our algorithm for the $3$-sphere replaces both by fully dynamic connectivity, which is what allows arbitrary insertions and deletions.
+Given a tree decomposition of width~$t$ of the bipartite graph of the nonzero entries, Fomin, Lokshtanov, Saurabh, Pilipczuk, and Wrochna~\cite{FLPSW18} compute the rank of an $s\times s$ matrix with $O(t^3s)$ arithmetic operations.
+Our dynamic structures store small summaries of groups of columns in a balanced hierarchy (Theorem~\ref{thm:hier}); with a balanced tree decomposition~\cite{BH98}, they show that bounded treewidth of the Hasse diagram suffices for polylogarithmic worst-case updates (Corollary~\ref{cor:tw-betti}).
+
+\paragraph{Output-sensitive and Morse-theoretic methods.}
+Several methods aim for a cost governed by the homology rather than by the size of the complex.
+Annotations~\cite{BCCDW12,DFW14} maintain a homology basis under elementary inclusions and collapses.
+Discrete Morse theory~\cite{For98} and its use for persistence~\cite{MN13} replace a complex by a smaller chain complex on its \emph{critical cells}, the cells left unmatched by an acyclic matching between cells and their facets; their number is at least the total Betti number.
+The hard instances of Theorem~\ref{thm:acyclic} are connected and have $\beta_1=\beta_2\le1$, so no method whose cost is governed by the homology of the complex, rather than its size, can escape our lower bounds.
+This argument does not cover methods whose cost depends on the number of critical cells of a given matching, which can be much larger than the total Betti number.

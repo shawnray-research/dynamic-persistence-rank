@@ -1,0 +1,211 @@
+\section{Introduction}\label{sec:intro}
+
+Persistent homology summarizes the shape of data by the cycles of a simplicial complex and the scales at which they appear and disappear~\cite{ELZ02,ZC05,EH10}.
+In a growing number of applications the complex is not fixed but changes over time.
+Examples include collective motion and other time-varying point clouds~\cite{TZH15,KM21}, sliding-window embeddings of signals~\cite{PH15}, streaming data, where complexes evolve by insertions and edge contractions~\cite{KS19}, and gradient-based optimization and learning, where the complex or its filtration changes at every step~\cite{HKND19,CCGIKU21}.
+Recomputing persistent homology from scratch takes $O(n^{\omega})$ time for a complex with $n$ simplices~\cite{MMS11}, where $\omega<2.372$ is the exponent of matrix multiplication~\cite{ADVXXZ25}.
+So a natural goal is a data structure that absorbs a local change, such as the insertion or deletion of one simplex, in time much smaller than~$n$.
+
+The $p$-th Betti number $\beta_p$ of a complex counts its independent $p$-dimensional holes: $\beta_0$ counts connected components, $\beta_1$ independent loops, and $\beta_2$ enclosed voids.
+For $\beta_0$ the goal of fast updates has been reached.
+The number~$\beta_0$ of connected components is maintained by dynamic connectivity in polylogarithmic time per update~\cite{HDT01,WN13,KKM13}, and Dey, Hou, and Parsa~\cite{DHP23} update the persistence of graph filtrations in sublinear time by maintaining minimum spanning forests in dynamic trees.
+For time series, the banana trees of Cultrera di Montesano et al.~\cite{CEHO24} support insertions, deletions, cuts, and concatenations in time logarithmic in the length of the series plus the number of changes to the augmented persistence diagram.
+For general complexes of dimension two or more, the update procedures we know of take time polynomial in~$n$ per insertion or deletion of a simplex in the worst case.
+Vines and vineyards~\cite{CEMS06} process a transposition of two consecutive simplices in $O(n)$ time, but moving one simplex may take up to $n-1$ transpositions; updates of zigzag persistence, which allows deletions as well as insertions~\cite{DH21u}, warm-started reductions~\cite{LN21}, and recomputation are also polynomial in the worst case.
+Is this a shortcoming of the algorithms, or is maintaining homology inherently hard?
+We show that the answer is tied to a classical open problem: maintaining Betti numbers is equivalent, up to constant factors, to maintaining the rank of a sparse matrix (an arbitrary one over~$\Ftwo$, and one with entries in $\{0,\pm1\}$ over other fields).
+As a consequence, under the Online Matrix--Vector multiplication (\OMv) conjecture~\cite{HKNS15}, for no $\eps>0$ can a data structure with polynomial preprocessing time maintain a Betti number $\beta_p$ with $p\ge1$ under insertions and deletions in amortized time $O(n^{1/2-\eps})$ per update while answering queries in time $O(n^{1-\eps})$.
+In the \OMv\ problem, an algorithm receives a Boolean $\ell\times\ell$ matrix~$M$, then Boolean vectors $v_1,\dots,v_\ell$ arrive one at a time, and it must output the Boolean product $Mv_t$ before $v_{t+1}$ is revealed; the conjecture states that no algorithm does this in total time $O(\ell^{3-\eps})$ for any $\eps>0$, that is, polynomially faster than computing every product naively.
+It is the standard source of tight conditional lower bounds for dynamic problems~\cite{HKNS15}.
+Our bounds concern insertions, deletions, and value changes; they say nothing about the cost of a single transposition (Section~\ref{sec:related}).
+
+\paragraph{The problem.}
+We study the following basic problem, defined formally in Section~\ref{sec:prelim}.
+A fixed simplicial complex~$\cU$ with $n$ simplices, the \emph{universe}, is given in advance.
+A data structure maintains a subcomplex $K\subseteq\cU$ under the insertion and deletion of single simplices and, on request, reports the $p$-th Betti number $\beta_p(K)=\dim H_p(K;\F)$ over a fixed field~$\F$.
+We call this problem \emph{dynamic Betti numbers}.
+It is the simplest dynamic question one can ask about homology, because the answer is a single integer.
+In persistence, a monotone function on the simplices defines a \emph{filtration} by its sublevel sets, the \emph{barcode} records the interval of values during which each homology class lives, and a \emph{persistent Betti number} counts the bars that contain given values.
+In particular, $\beta_p(K)$ is the persistent Betti number, at value~$0$, of the function that is $0$ on~$K$ and $1$ elsewhere, so a data structure that maintains a barcode under changes of function values and can count the bars containing a given value also solves dynamic Betti numbers (Lemma~\ref{lem:sublevel}); our lower bounds therefore apply to it.
+
+\subsection{Our results}
+
+Our main finding is that dynamic Betti numbers are a disguised form of a classical problem in dynamic linear algebra: \emph{dynamic matrix rank}, in which one maintains the rank of a matrix under changes of single entries~\cite{FF09,San07,vdBNS19}.
+
+\paragraph{Rank-completeness.}
+We call a dynamic problem \emph{rank-complete} if it and dynamic matrix rank reduce to each other with constant overhead per operation and a linear change in instance size (Section~\ref{sec:prelim}); over $\Ftwo$ this refers to the rank of arbitrary matrices, and over other fields to matrices with entries in $\{0,\pm1\}$.
+We show that dynamic $\beta_p$ is rank-complete for every fixed $p\ge1$; dynamic $\beta_0$, which is dynamic connectivity, is not, unless the \OMv\ conjecture fails.
+One direction is folklore: $\beta_p(K)$ is determined by the ranks of two boundary matrices, and inserting or deleting a simplex changes one column of one of them (Lemma~\ref{lem:betti-to-rank}).
+Our first contribution is the converse, with constant overhead.
+We use a slightly richer version of dynamic rank (Problem~\ref{prob:rank}).
+Besides changing an entry, an update may \emph{switch} a whole row or column off, which removes it from the matrix whose rank is queried, or switch it back on.
+A set of \emph{admissible positions}, fixed in advance, contains every position that may ever hold a nonzero entry, so that the size of an instance can reflect sparsity.
+
+\begin{theorem}[informal version of Theorem~\ref{thm:equiv} and Corollary~\ref{cor:equiv}]\label{thm:intro-equiv}
+Let $\F$ be a field.
+\begin{enumerate}[label=(\roman*)]
+\item Maintaining the rank of a $0/1$ matrix over~$\F$ with $r$ rows, $k$ columns, and $m$ admissible positions, under entry flips and switches, reduces to maintaining $\beta_1$ of a $2$-complex with $O(r+k+m)$ simplices: an entry flip costs seven simplex insertions or deletions, a switch costs one, and a rank query costs one Betti query. For matrices with entries in $\{0,\pm1\}$, an entry update costs at most eight simplex updates.
+\item Conversely, for every fixed $p\ge0$, maintaining $\beta_p$ of a subcomplex of a universe with $n$ simplices reduces to maintaining the rank of a matrix with entries in $\{0,\pm1\}$ and $O(n)$ admissible positions, with one switch per simplex update.
+\end{enumerate}
+\end{theorem}
+
+Theorem~\ref{thm:intro-equiv} shows that over $\Ftwo$, dynamic $\beta_1$ of $2$-complexes and dynamic matrix rank are equivalent up to constant factors in time and size; over every field, the same holds for matrices with entries in $\{0,\pm1\}$, which include all boundary matrices (Section~\ref{sec:equiv-thm}).
+Size here is the instance size $N=r+k+m$ of Problem~\ref{prob:rank}, not the dimension of the matrix: a dense $s\times s$ matrix becomes a complex with $\Theta(s^2)$ simplices.
+This measure matters when comparing bounds: the hard instances of our lower bound (Theorem~\ref{thm:intro-omv} below) encode dense $\sqrt n\times\sqrt n$ matrices, on which the dynamic-rank algorithm of van den Brand, Nanongkai, and Saranurak~\cite{vdBNS19} takes $O(n^{0.7035})$ time per update, whereas on the boundary matrices of an arbitrary complex it takes $O(n^{1.407})$ time (Corollary~\ref{cor:upper}); the remaining gap is inherited from dense dynamic rank.
+
+The reduction rests on a local, switchable gadget (Figure~\ref{fig:gadget} and Section~\ref{sec:overview}).
+It follows the pattern of the static reduction of Edelsbrunner and Parsa~\cite{EP14}, with rows and columns exchanged: rows become hollow triangles, columns become punctured spheres, and the $2$-cycles encode the linear dependencies among the columns, so $\beta_2$ equals the nullity of the matrix and $\beta_1$ follows from the Euler--Poincar\'e formula.
+Edelsbrunner and Parsa only need some triangulation with $O(h)$ simplices of each sphere with $h$ holes, and such a triangulation may change in $\Theta(h)$ simplices when a hole is added or removed; on dense matrices, $h=\Theta(\sqrt n)$.
+We add two features.
+\emph{Switches}, one triangle each, turn rows and columns off and on; they alone already yield the basic \OMv\ lower bound (Theorem~\ref{thm:intro-omv} below).
+And we assemble every punctured sphere from constant-size pieces, one per admissible position, so that every entry update costs a constant number of simplex updates; this locality yields the equivalence.
+Switches alone suffice for the basic lower bound and most of its variants, and they could equally be added to the static complex of~\cite{EP14}; constant-cost entry updates are needed for the equivalence itself and for the results that flip entries, namely the worst-case bounds (Theorem~\ref{thm:worstcase} and Corollary~\ref{cor:hinted}) and the hardness of deciding whether $H_1$ vanishes (Theorem~\ref{thm:acyclic}).
+
+\input{figures/fig-gadget}
+
+\paragraph{Conditional lower bounds.}
+Dynamic rank with switches is hard under the \OMv\ conjecture by an elementary argument: for Boolean vectors $u,v$, the Boolean product $u^{\top}Mv$ equals~$1$ exactly when the submatrix $M[\supp u,\supp v]$ formed by the rows in the support $\supp u=\{i:u_i=1\}$ and the columns in the support $\supp v$ is nonzero, that is, has rank at least one (Lemma~\ref{lem:rank-omv}).
+Because our gadget implements every switch with a single simplex update, this hardness transfers to Betti numbers, deterministically and over every field.
+
+\begin{theorem}[informal version of Theorem~\ref{thm:omv} and Corollaries~\ref{cor:allp} and~\ref{cor:persistence}]\label{thm:intro-omv}
+Assume the \OMv\ conjecture, and let $\F$ be a field, $p\ge1$, and $\eps>0$.
+No data structure with polynomial preprocessing time maintains $\beta_p(K;\F)$ of a subcomplex $K$ of a given universe of dimension $\max\{p,2\}$ with $n$ simplices under simplex insertions and deletions with amortized update time $O(n^{1/2-\eps})$ and query time $O(n^{1-\eps})$.
+The same holds for persistent Betti numbers of the sublevel-set filtration of a monotone function on a fixed complex, under updates that change one function value at a time, already for $\{0,1\}$-valued functions.
+\end{theorem}
+
+The hard universes form one explicit family; by Theorem~\ref{thm:intro-dichotomy}(i) below, the bound does not hold for universes in~$\R^3$.
+
+\paragraph{Robustness.}
+The lower bound of Theorem~\ref{thm:intro-omv} survives each of the following restrictions, and it extends to related problems (Section~\ref{sec:lower}).
+\begin{itemize}
+\item \emph{Bounded degree.} Every vertex of the universe lies in a constant number of simplices (Theorem~\ref{thm:bdeg} and Corollary~\ref{cor:bdeg-allp}).
+\item \emph{Geometry.} The universe is a fixed $2$-complex that is linearly embedded in~$\R^4$, that is, its triangles are straight triangles that meet only in common edges and vertices; this holds for $\beta_1$ and~$\beta_2$ (Theorem~\ref{thm:r4}).
+\item \emph{Point clouds and metric spaces.} The complex is a clique complex (the complex of all cliques of a graph) under vertex or edge updates, the Vietoris--Rips complex (all sets of points with pairwise distances at most~$1$) of a finite metric space whose distances change one at a time, or the Vietoris--Rips complex of a point set in $\R^{O(\log n)}$ under point insertions and deletions; the query asks for $\beta_1$ (Theorem~\ref{thm:flag}) or, by the same argument, for $\beta_p$ with any fixed $p\ge2$, and $n$ is the number of vertices or points.
+\item \emph{Almost no homology.} The query only asks whether $H_1(K)=0$, on connected complexes with $\beta_1=\beta_2\le1$ (Theorem~\ref{thm:acyclic}). So neither algorithms whose running time depends on the size of the answer nor algorithms that approximate $\beta_1$ within any factor can beat the bound on all inputs.
+\item \emph{Zigzag persistence.} A sequence of simplex insertions and deletions is a \emph{zigzag filtration}, and its degree-one barcode records the interval of steps during which each independent loop lives. An online algorithm that reports it for filtrations of length~$L$ needs total time $L^{3/2-o(1)}$ (Corollary~\ref{cor:zigzag}).
+\item \emph{Partially dynamic.} The data structure supports only insertions, or only deletions; here the bound is for worst-case update time (Theorem~\ref{thm:partial}).
+\end{itemize}
+
+\paragraph{Relation to dynamic rank.}
+For dynamic rank itself, \OMv-hardness over large fields was observed by van den Brand, Nanongkai, and Saranurak~\cite{vdBNS19}.
+For row and column updates, it follows from~\cite[Theorem~E.5]{vdBNS19full}: \OMv-hardness of $st$-reachability under node updates~\cite{HKNS15} transfers to bipartite perfect matching under node updates~\cite{AV14}, whose size is, with high probability, the rank of the biadjacency matrix with random entries~\cite[Theorem~C.24]{vdBNS19full}.
+Lemma~\ref{lem:rank-omv} instead gives a direct and deterministic reduction from \OuMv\ (the variant of \OMv\ whose requests are pairs $(u,v)$ of Boolean vectors, answered by the Boolean value $u^{\top}Mv=\bigvee_{i,j}u_iM_{ij}v_j$, not its parity) over every field, using switches or, equivalently, the padding identity~\eqref{eq:padding}.
+On the side of rank, the bounded-degree version of our gadget shows that over every field, dynamic rank under entry updates is \OMv-hard already for matrices with entries in $\{0,\pm1\}$ and at most three admissible positions in every row and column (Corollary~\ref{cor:sparse-rank}); this also follows without topology from Lemma~\ref{lem:rank-omv} and an elementary dynamic sparsification by partial sums, and static sparsifications of this kind are known~\cite{EP14,Yus08}.
+
+\paragraph{Worst-case bounds and algorithms.}
+Worst-case lower bounds for dynamic rank of dense $\ell\times\ell$ $0/1$ matrices under entry flips transfer to Betti numbers through the equivalence, with the exponent halved because the universe has $n=\Theta(\ell^2)$ simplices (Theorem~\ref{thm:worstcase}).
+Combining this transfer with the hinted variants of \OMv\ proposed by van den Brand et al.~\cite{vdBNS19}, in which information about the future query vectors is revealed in advance, we show that over every field, every data structure with polynomial preprocessing time needs worst-case update or query time $n^{\alpha/2-o(1)}$, where $\alpha$ is an exponent determined by rectangular matrix multiplication (Section~\ref{sec:lower-worst}), with $\alpha/2\ge5/8$ and $\alpha/2\approx0.703$ for the current bounds (Corollary~\ref{cor:hinted}).
+We keep amortized and worst-case statements separate throughout.
+In the other direction, the equivalence turns every dynamic-rank algorithm into a dynamic-Betti algorithm.
+With the randomized dynamic-rank algorithm of van den Brand, Nanongkai, and Saranurak~\cite{vdBNS19} (see also~\cite{San07}), every Betti number of every complex can be maintained with $O(n^{1.407})$ field operations per update in the worst case, which is faster than recomputation (Corollary~\ref{cor:upper}).
+
+\paragraph{Where maintenance becomes easy.}
+Our lower bound is about cycles of dimension at least one.
+It cannot extend to $\beta_0$, because maintaining $\beta_0$ is dynamic connectivity.
+It does not extend to complexes in three-dimensional space either: there, a simple combination of Alexander duality with fully dynamic connectivity maintains all Betti numbers, whereas four dimensions already suffice for hardness.
+
+\begin{theorem}[informal version of Corollary~\ref{cor:anyR3} and Theorem~\ref{thm:r4}]\label{thm:intro-dichotomy}
+\leavevmode
+\begin{enumerate}[label=(\roman*)]
+\item For every fixed simplicial complex $\cU$ with $n$ simplices that is linearly embedded in~$\R^3$, with rational vertex coordinates, all Betti numbers of a subcomplex $K\subseteq\cU$ can be maintained in $O(\log^2 n)$ amortized time per simplex insertion or deletion, with constant query time, after preprocessing in time polynomial in the input size.
+\item Under the \OMv\ conjecture, the lower bound of Theorem~\ref{thm:intro-omv} for $\beta_1$ and for $\beta_2$ holds even when the universe is a $2$-complex that is linearly embedded in~$\R^4$.
+\end{enumerate}
+\end{theorem}
+
+In part~(ii), the reduction from dynamic rank of $0/1$ matrices holds verbatim for universes linearly embedded in~$\R^4$, so over $\Ftwo$ maintaining $\beta_1$ of such $2$-complexes is equivalent to dynamic matrix rank (Corollary~\ref{cor:r4-equiv}).
+Part~(i) rests on a fully dynamic algorithm for subcomplexes of a triangulated $3$-sphere (Theorem~\ref{thm:s3}), which combines a combinatorial form of Alexander duality with dynamic connectivity.
+It is the fully dynamic analogue of the incremental algorithm of Delfinado and Edelsbrunner~\cite{DE95}, and it applies directly to every subcomplex of a fixed triangulation of a $3$-ball, for example the Delaunay triangulation of a fixed point set in~$\R^3$ and all its alpha complexes (Corollary~\ref{cor:r3}); point insertions and deletions, which may change $\Theta(n)$ Delaunay simplices, are not covered.
+Duality also explains where the line falls: for a subcomplex of a triangulated $d$-sphere, connectivity of the complement determines $\beta_d$ and $\beta_{d-1}$, which, together with $\beta_0$ and the Euler--Poincar\'e formula, determine all Betti numbers when $d=3$ but leave $\beta_1$ and $\beta_2$ tied by a single relation when $d=4$; these are exactly the Betti numbers of part~(ii).
+Theorem~\ref{thm:intro-dichotomy} is the dynamic analogue of the static picture drawn by Edelsbrunner and Parsa~\cite{EP14}: computing the Betti numbers of a complex in~$\R^3$ takes near-linear time~\cite{DE95,DG98}, while for complexes in~$\R^4$ it is as hard as computing the rank of a matrix.
+Finally, sparse structure helps even without geometry.
+If the \emph{Hasse diagram} of the universe, the graph that joins every simplex to its facets, is given with a tree decomposition of width~$t$, then every Betti number $\beta_p$ with fixed~$p$ can be maintained with \mbox{$O((t+1)^3\log n\log(t+2))$} field operations per update in the worst case (Corollary~\ref{cor:tw-betti}); a simpler structure handles boundary matrices of small \emph{width}, a parameter akin to bandwidth (Theorem~\ref{thm:banded} and Corollary~\ref{cor:bandwidth}).
+Figure~\ref{fig:landscape} and Table~\ref{tab:landscape} summarize the landscape.
+
+\input{figures/fig-landscape}
+
+\begin{table}[tb]
+\caption{The bounds of Figure~\ref{fig:landscape} in detail, together with further settings. Updates are single-simplex insertions and deletions unless a row says otherwise. ``Amortized'' and ``worst-case'' refer to update time; the algorithms have query time $O(1)$ and polynomial preprocessing time, and the last two count field operations. Each lower bound holds for every $\eps>0$, over every field unless stated otherwise, and for every data structure with polynomial preprocessing time and query time $O(n^{1-\eps})$; the zigzag row instead bounds the total time of an online algorithm. Each lower bound assumes the \OMv\ conjecture, except the one marked~${}^{\dagger}$ in the last row, which assumes the \uMv-hinted \uMv\ conjecture of van den Brand, Nanongkai, and Saranurak~\cite{vdBNS19} and bounds the maximum of the update and query times; here $\alpha/2\ge5/8$, and $\alpha/2\approx0.703$ for the current bounds on rectangular matrix multiplication.}
+\label{tab:landscape}
+\small
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{0.5\linewidth}ll@{}}
+\toprule
+\multicolumn{3}{@{}l}{\emph{Algorithms}}\\
+\midrule
+$\beta_0$, any universe & $O(\log^2 n)$ amortized & Prop.~\ref{prop:beta0} \\
+All $\beta_p$, any fixed complex in $\R^3$ (polynomial preprocessing) & $O(\log^2 n)$ amortized & Cor.~\ref{cor:anyR3} \\
+$\beta_p$ for fixed $p$, given a tree decomposition of the Hasse diagram of width $t$ & $O((t{+}1)^3\log n\log(t{+}2))$ worst-case & Cor.~\ref{cor:tw-betti} \\
+All $\beta_p$, any universe (randomized) & $O(n^{1.407})$ worst-case & Cor.~\ref{cor:upper} \\
+\midrule
+\multicolumn{3}{@{}l}{\emph{Conditional lower bounds}}\\
+\midrule
+$\beta_p$ for any $p\ge1$ & $n^{1/2-o(1)}$ amortized & Cor.~\ref{cor:allp} \\
+\quad\ldots\ on universes of bounded degree & $n^{1/2-o(1)}$ amortized & Sec.~\ref{sec:lower-bdeg} \\
+\quad\ldots\ for $p\le2$, on universes linearly embedded in $\R^4$ & $n^{1/2-o(1)}$ amortized & Thm.~\ref{thm:r4} \\
+\quad\ldots\ insertions only, or deletions only & $n^{1/2-o(1)}$ worst-case & Thm.~\ref{thm:partial} \\
+Deciding $H_1(K)=0$, for connected $K$ with $\beta_1=\beta_2\le1$ & $n^{1/2-o(1)}$ amortized & Thm.~\ref{thm:acyclic} \\
+Persistent Betti numbers under function-value updates & $n^{1/2-o(1)}$ amortized & Cor.~\ref{cor:persistence} \\
+$\beta_p$ of clique and Vietoris--Rips complexes (metric spaces, points in $\R^{O(\log n)}$) & $n^{1/2-o(1)}$ amortized & Sec.~\ref{sec:flag} \\
+Online zigzag persistence in degree one, length $L$ & $L^{3/2-o(1)}$ total & Cor.~\ref{cor:zigzag} \\
+$\beta_p$ for any $p\ge1$ & $n^{\alpha/2-o(1)}$ worst-case${}^{\dagger}$ & Cor.~\ref{cor:hinted} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Technical overview}\label{sec:overview}
+
+
+\paragraph{From homology to rank.}
+For a complex $K$ and a field $\F$, the rank--nullity theorem gives
+\[
+  \beta_p(K)=n_p(K)-\rk\bd_p-\rk\bd_{p+1},
+\]
+where $n_p(K)$ is the number of $p$-simplices and $\bd_p$ is the $p$-th boundary matrix.
+Inserting a $p$-simplex adds one column to~$\bd_p$; it does not change $\bd_{p+1}$, because no $(p+1)$-simplex containing it is present yet.
+So a dynamic-rank structure for the boundary matrices of the universe, with absent simplices represented by zero columns, maintains every Betti number.
+
+\paragraph{From rank to homology.}
+Given a matrix $A\in\{0,1\}^{r\times k}$, we build a $2$-complex $\KA$ as follows (Figure~\ref{fig:gadget} and Definition~\ref{def:gadget}).
+Row~$i$ becomes a \emph{row cycle}~$C_i$: three edges forming a hollow triangle.
+Column~$j$ becomes a sphere with one hole per row, triangulated from constant-size pieces called \emph{sockets}.
+The hole of row~$i$ is sealed by a single triangle if $A_{ij}=0$, and joined to $C_i$ by a tube of six triangles if $A_{ij}=1$.
+The column therefore becomes a connected surface $\Sigma_j$ whose boundary consists of the row cycles $C_i$ with $A_{ij}=1$.
+The key fact, Lemma~\ref{lem:crux}, is that a $2$-cycle has the same coefficient $x_j$ on every triangle of~$\Sigma_j$, because adjacent triangles must cancel along their common edge.
+A $2$-chain with coefficient $x_j$ on every triangle of~$\Sigma_j$ has boundary $\sum_i\bigl(\sum_jA_{ij}x_j\bigr)C_i$, so it is a $2$-cycle exactly when $Ax=0$.
+Hence the $2$-cycles correspond exactly to the vectors~$x$ with $Ax=0$, and $\beta_2(\KA)=k-\rk A$.
+Flipping $A_{ij}$ exchanges the seal for the tube, which changes seven triangles.
+
+\paragraph{Switches.}
+Think of the columns of $A$ as unknowns and of the rows as equations.
+A $2$-cycle puts a coefficient $x_j$ on~$\Sigma_j$, and for the boundary to cancel on $C_i$ these coefficients must satisfy the equation $\sum_jA_{ij}x_j=0$ of row~$i$.
+If we insert the triangle that fills $C_i$, a $2$-cycle can cancel its boundary on $C_i$ with that triangle instead, and the equation of row~$i$ disappears: filling $C_i$ switches row~$i$ \emph{off}.
+Columns work the other way around.
+Each $\Sigma_j$ gets one more boundary component, a private hollow triangle $\Lambda_j$, the \emph{tether}, that no other surface touches.
+While $\Lambda_j$ is hollow, nothing can cancel the boundary of $\Sigma_j$ there, so $x_j=0$ in every $2$-cycle; filling $\Lambda_j$ switches column~$j$ \emph{on}.
+Each switch inserts or deletes a single triangle.
+Now take $A=M\in\{0,1\}^{\ell\times\ell}$ and Boolean vectors $u,v\in\{0,1\}^{\ell}$ with supports $\supp u=\{i:u_i=1\}$ and $\supp v=\{j:v_j=1\}$.
+If exactly the rows in $\supp u$ and the columns in $\supp v$ are on, then $\beta_2=\lvert\supp v\rvert-\rk M[\supp u,\supp v]$.
+This is smaller than $\lvert\supp v\rvert$ exactly when $M[\supp u,\supp v]\ne0$, that is, exactly when the Boolean product $u^{\top}Mv=\bigvee_{i,j}u_iM_{ij}v_j$ equals~$1$; a $0/1$ matrix is nonzero over every field if it is nonzero at all, so this works over every field.
+Answering $\ell$ such requests online is the \OuMv\ problem, which needs total time $\ell^{3-o(1)}$ under the \OMv\ conjecture, even after polynomial preprocessing of~$M$~\cite{HKNS15}.
+Our universe has $n=\Theta(\ell^2)$ simplices, and moving from one request to the next takes $O(\ell)=O(\sqrt n)$ switches and one query.
+A data structure with update time $n^{1/2-\eps}$ and query time $n^{1-\eps}$ would thus answer all $\ell$ requests in time $\ell\cdot(\ell\cdot\ell^{1-2\eps}+\ell^{2-2\eps})=O(\ell^{3-2\eps})$, contradicting the conjecture; this is where the exponents $1/2$ and $1$ in Theorem~\ref{thm:intro-omv} come from.
+
+\paragraph{Almost no homology.}
+The complexes above contain the whole $1$-skeleton of the universe, so their first Betti number is typically of order~$n$, and one might hope for algorithms whose cost depends on the homology rather than on the size of the complex.
+To rule this out (Theorem~\ref{thm:acyclic}), we cone off the support graph of the matrix, which kills its cycles without changing the rank information.
+We then encode an \OuMv\ request in a bordered matrix whose rank deficiency is a single bit, so that $\beta_1=\beta_2\in\{0,1\}$, and a standard random isolation step turns this bit into the Boolean answer.
+
+\paragraph{Easy cases.}
+For a proper subcomplex $K\subsetneq T$ of a triangulated $3$-sphere $T$, Alexander duality gives $\beta_2(K)=c-1$, where $c$ is the number of connected components of the complement of~$K$ in the sphere.
+These components correspond to the components of a dual graph whose nodes are the tetrahedra of $T$ not in~$K$ and whose edges are the triangles of $T$ not in~$K$.
+A simplex update changes this graph by $O(1)$ nodes or edges.
+So $\beta_0$ and $\beta_2$ both reduce to dynamic connectivity, and the Euler--Poincar\'e formula gives~$\beta_1$.
+
+\subsection{Organization}
+\input{figures/fig-roadmap}
+Figure~\ref{fig:roadmap} shows how the results depend on each other.
+Section~\ref{sec:related} discusses related work.
+Section~\ref{sec:prelim} fixes notation and defines the dynamic problems and the reductions we use.
+Section~\ref{sec:equiv} presents the gadget and proves the equivalence.
+Section~\ref{sec:lower} derives the conditional lower bounds and their variants, including the embedding of the hard universes in~$\R^4$.
+Section~\ref{sec:easy} gives the algorithms for $\beta_0$, for subcomplexes of the $3$-sphere and of any fixed geometric complex in~$\R^3$, and for universes of small width or bounded treewidth.
+Section~\ref{sec:conclusion} lists open problems.

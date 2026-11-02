@@ -1,0 +1,62 @@
+% Figure: roadmap of the reductions and results.
+% Requires tikz with the arrows.meta library. Okabe--Ito tints: core blue, hard orange, easy green.
+\begin{figure}[t]
+\centering
+\providecommand{\uMv}{\textsf{uMv}}%
+\providecommand\Description[2][]{}%
+\Description{A flow diagram. On the left, three gray source boxes: the OMv conjecture, the uMv-hinted conjecture, and dynamic-rank algorithms. In the middle, two blue core boxes, dynamic rank and dynamic beta one, joined by arrows in both directions. On the right, a bracketed stack of nine orange boxes listing hard variants. Below a dashed line, three green boxes list the easy cases.}
+\definecolor{rmCore}{HTML}{0072B2}%
+\definecolor{rmHard}{HTML}{D55E00}%
+\definecolor{rmEasy}{HTML}{009E73}%
+\begin{tikzpicture}[x=1cm,y=1cm,font=\footnotesize,
+  box/.style={rounded corners=2.5pt,line width=0.5pt,align=center,inner sep=2.5pt,minimum height=0.62cm},
+  src/.style={box,fill=black!4,draw=black!45,text width=2.1cm,font=\small},
+  core/.style={box,fill=rmCore!11,draw=rmCore!85!black,text width=2.45cm,minimum height=1.05cm,font=\small},
+  hard/.style={rounded corners=2pt,line width=0.5pt,fill=rmHard!11,draw=rmHard!85!black},
+  easy/.style={box,fill=rmEasy!11,draw=rmEasy!85!black},
+  ref/.style={text=black!60,font=\scriptsize},
+  arr/.style={-{Stealth[length=2.1mm,width=1.6mm]},line width=0.6pt,draw=black!70},
+  lab/.style={font=\scriptsize,text=black!70,fill=white,inner sep=1pt}]
+  % sources
+  \node[src] (omv) at (1.1,1.05) {\OMv\\conjecture\\[-1pt]{\scriptsize\cite{HKNS15}}};
+  \node[src] (hint) at (1.1,-0.65) {\uMv-hinted\\\uMv\\[-1pt]{\scriptsize\cite{vdBNS19}}};
+  \node[src] (alg) at (1.1,-2.05) {dynamic-rank\\[-1pt]algorithms {\scriptsize\cite{San07,vdBNS19}}};
+  % the core equivalence
+  \node[core] (rank) at (4.45,0.05) {dynamic rank\\[-1pt]{\footnotesize flips + switches}};
+  \node[core] (betti) at (7.65,0.05) {dynamic $\beta_1$\\[-1pt]{\footnotesize of $2$-complexes}};
+  \draw[arr] (rank.20) -- node[lab,above=1.5pt] {gadget, Thm.~\ref{thm:equiv}} (betti.160);
+  \draw[arr] (betti.200) -- node[lab,below=1.5pt] {Lem.~\ref{lem:betti-to-rank}} (rank.340);
+  \draw[arr,rounded corners=3pt] (omv.east) -- node[lab,above=1pt,pos=0.5] {via \OuMv\ and switches, Thm.~\ref{thm:omv}} (7.15,1.05) -- (7.15,0.58);
+  \draw[arr] (hint.east) -- (rank.195);
+  % consequences (hard)
+  \foreach \y/\t/\r in {
+      2.0/{$\beta_p$ for every $p\ge1$}/{Cor.~\ref{cor:allp}},
+      1.5/{bounded vertex degree}/{Thm.~\ref{thm:bdeg}},
+      1.0/{$2$-complexes in $\R^4$}/{Thm.~\ref{thm:r4}},
+      0.5/{partially dynamic}/{Thm.~\ref{thm:partial}},
+      0.0/{deciding whether $H_1=0$}/{Thm.~\ref{thm:acyclic}},
+      -0.5/{persistent Betti numbers}/{Cor.~\ref{cor:persistence}},
+      -1.0/{Vietoris--Rips complexes}/{Thm.~\ref{thm:flag}},
+      -1.5/{online zigzag persistence}/{Cor.~\ref{cor:zigzag}},
+      -2.0/{worst case, every field}/{Cor.~\ref{cor:hinted}}} {
+    \path[hard] (9.38,\y-0.21) rectangle (13.68,\y+0.21);
+    \node[anchor=west,inner sep=0pt] at (9.47,\y) {\t};
+    \node[anchor=east,inner sep=0pt,ref] at (13.61,\y) {\r};
+  }
+  \draw[line width=0.6pt,black!55] (9.3,2.21) -- (9.22,2.21) -- (9.22,-2.21) -- (9.3,-2.21);
+  \draw[arr] (betti.east) -- (9.22,0.05);
+  % algorithms transfer back
+  \node[box,fill=rmCore!5,draw=rmCore!60,text width=2.75cm] (up) at (4.45,-2.05) {every $\beta_p$ in $O(n^{1.407})$\\[-1pt]{\scriptsize\color{black!60}worst case, Cor.~\ref{cor:upper}}};
+  \draw[arr,dashed] (alg.east) -- (up.west);
+  \draw[arr,dashed] (rank.south) -- node[lab,right=1pt] {Lem.~\ref{lem:betti-to-rank}} (up.north);
+  % easy side
+  \draw[black!25,line width=0.5pt,dash pattern=on 2pt off 2pt] (-0.05,-2.85) -- (13.65,-2.85);
+  \node[font=\scriptsize\itshape,text=black!55,anchor=north west] at (-0.05,-2.9) {where maintenance is easy};
+  \node[easy,text width=3.95cm] (b0) at (2.08,-3.65) {$\beta_0$; $\beta_1$ of graphs: $O(\log^2 n)$\\[-1pt]{\scriptsize\color{black!60}amortized; connectivity, Prop.~\ref{prop:beta0}}};
+  \node[easy,text width=4.25cm] (r3) at (6.78,-3.65) {all $\beta_p$ in $\R^3$: $O(\log^2 n)$\\[-1pt]{\scriptsize\color{black!60}amortized; duality, Thm.~\ref{thm:s3}, Cor.~\ref{cor:anyR3}}};
+  \node[easy,text width=4.25cm] (bw) at (11.48,-3.65) {$\beta_p$, constant treewidth: $O(\log n)$\\[-1pt]{\scriptsize\color{black!60}worst case; Cors.~\ref{cor:tw-betti} and~\ref{cor:bandwidth}}};
+\end{tikzpicture}
+\caption{Roadmap of the results. Solid arrows point in the direction in which hardness propagates; the two arrows between the core problems are the two halves of the equivalence (Theorem~\ref{thm:equiv}), and the \OMv\ lower bound is proved directly for Betti numbers, using the switches of the gadget. Dashed arrows transfer algorithms from dynamic rank to dynamic Betti numbers.
+The orange boxes are the variants of the lower bound in Section~\ref{sec:lower}, listed in the order of Table~\ref{tab:landscape}; the pale box ``every $\beta_p$ in $O(n^{1.407})$'' is the general algorithm obtained from dynamic rank (Corollary~\ref{cor:upper}); the green boxes are the algorithms of Section~\ref{sec:easy}, where the treewidth is that of the Hasse diagram and the bandwidth bound is Corollary~\ref{cor:bandwidth}. The arrow from the hinted conjecture yields worst-case bounds only.}
+\label{fig:roadmap}
+\end{figure}

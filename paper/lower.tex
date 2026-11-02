@@ -1,0 +1,1063 @@
+\providecommand{\uMv}{\textsf{uMv}}
+\section{Conditional lower bounds}\label{sec:lower}
+
+In this section we prove lower bounds for dynamic Betti numbers that are conditional on the \OMv\ conjecture.
+Section~\ref{sec:lower-round} shows that the gadget of Section~\ref{sec:equiv} answers one \OuMv\ request with $O(\ell)$ simplex updates and a single query.
+Section~\ref{sec:lower-amortized} derives amortized lower bounds for $\beta_p$ for every $p\ge1$, and Section~\ref{sec:lower-persistence} extends them to persistent Betti numbers of sublevel sets.
+Section~\ref{sec:zigzag} restates the bounds as a lower bound on the total time of online zigzag persistence.
+Section~\ref{sec:lower-worst} proves worst-case lower bounds for data structures that support only insertions or only deletions, and it transfers worst-case lower bounds from dynamic rank.
+Section~\ref{sec:lower-bdeg} shows that the bounds hold on universes of bounded degree, Section~\ref{sec:lower-r4} on $2$-complexes that are linearly embedded in~$\R^4$, Section~\ref{sec:flag} extends them to clique complexes and Vietoris--Rips complexes, and Section~\ref{sec:acyclic} to complexes with almost no homology.
+Section~\ref{sec:lower-scope} discusses what the bounds do not cover.
+
+\subsection{One request of \OuMv}\label{sec:lower-round}
+
+Throughout this section, \emph{dynamic $\beta_p$ over $\F$} denotes Problem~\ref{prob:betti} with parameters $p$ and~$\F$, and $n$ denotes the number of simplices of the universe.
+For a vector $u\in\{0,1\}^{\ell}$ we write ${\supp u=\{i\in[\ell]:u_i=1\}}$.
+A matrix with no rows or no columns has rank~$0$.
+
+\paragraph{The hypothesis.}
+We use the consequence of the \OMv\ conjecture recalled in Section~\ref{sec:prelim}~\cite[Theorem~2.7]{HKNS15full}.
+If the conjecture holds, then for every constant $\delta>0$ no algorithm solves \OuMv\ for matrices $M\in\{0,1\}^{\ell\times\ell}$ and $\ell$ requests with preprocessing time polynomial in~$\ell$, computation time $O(\ell^{3-\delta})$, and error probability at most~$1/3$.
+Here the \emph{computation time} is the total time spent after preprocessing.
+
+\paragraph{Dynamic rank with switches.}
+Switches make dynamic rank \OMv-hard by an elementary argument, which we state first.
+
+\begin{lemma}\label{lem:rank-omv}
+Let $\F$ be a field and $\eps>0$.
+If the \OMv\ conjecture holds, then no data structure for Problem~\ref{prob:rank} over $\F$ on the instances with $r=k=\ell$ and $P=[\ell]\times[\ell]$, $\ell\ge1$, has polynomial preprocessing time, amortized update time $O(N^{1/2-\eps})$, and query time $O(N^{1-\eps})$, where $N=2\ell+\ell^2$ is the instance size.
+This holds even if every entry update sets an entry to $0$ or~$1$ and all updates after the first $\ell^2$ are switches.
+\end{lemma}
+
+\begin{proof}
+Given an \OuMv\ instance $M\in\{0,1\}^{\ell\times\ell}$, we set $A=M$ with at most $\ell^2$ entry updates; afterwards $R=J=[\ell]$.
+For a request $(u,v)$, at most $2\ell$ switches make $R=\supp u$ and $J=\supp v$, and one query returns $\rk A[R,J]$.
+Since $A[R,J]$ is a $0/1$ matrix, its rank over $\F$ is positive if and only if it has a nonzero entry, that is, if and only if $u^{\top}Mv=1$.
+By the definition of amortized time, after the polynomial preprocessing of the data structure, the at most $3\ell^2$ updates and the $\ell$ interleaved queries take time $O((N+3\ell^2)N^{1/2-\eps}+\ell N^{1-\eps})=O(\ell^{3-2\eps})$ in total, and reading the requests takes $O(\ell^2)$ time; the total $O(\ell^{3-2\eps}+\ell^2)=O(\ell^{3-\delta})$, with $\delta=\min\{2\eps,1\}$, contradicts the consequence of the \OMv\ conjecture stated above.
+\end{proof}
+
+Together with Theorem~\ref{thm:equiv}(ii), which maps every switch to one simplex update and every rank query to one Betti query, Lemma~\ref{lem:rank-omv} already implies the lower bound for $\beta_1$ and $\beta_2$ in Theorem~\ref{thm:omv} below.
+We nevertheless give a direct proof through the following abstraction of the gadget, because the same argument also yields the worst-case bounds for partially dynamic data structures (Theorem~\ref{thm:partial}), in which switching a row off and switching a column on are insertions, and the bounds for universes of bounded degree (Theorem~\ref{thm:bdeg}).
+
+\paragraph{Encodings.}
+Our reduction uses only three properties of the gadget, which we isolate in the following definition.
+We apply it to the gadget of Section~\ref{sec:equiv} and, in Section~\ref{sec:lower-bdeg}, to a variant of bounded degree.
+
+\begin{definition}[Encoding]\label{def:encoding}
+Let $\F$ be a field, let $\ell$ be a positive integer, and let $M\in\{0,1\}^{\ell\times\ell}$.
+An \emph{encoding of $M$ over~$\F$} consists of a $2$-dimensional universe $\cU$ and a subcomplex $K_{R,J}\subseteq\cU$ for every pair of sets $R,J\subseteq[\ell]$, with the following properties.
+\begin{enumerate}[label=(E\arabic*)]
+\item\label{enc:skeleton} Every complex $K_{R,J}$ contains all vertices and all edges of~$\cU$.
+\item\label{enc:rank} $\beta_2(K_{R,J};\F)=|J|-\rk_{\F}M[R,J]$ for all $R,J\subseteq[\ell]$.
+\item\label{enc:switch} There are distinct triangles $D_1,\dots,D_\ell,E_1,\dots,E_\ell$ of $\cU$, none of them in $K_{[\ell],\emptyset}$, such that $K_{R,J}=K_{[\ell],\emptyset}\cup\{D_i:i\notin R\}\cup\{E_j:j\in J\}$ for all $R,J\subseteq[\ell]$.
+\end{enumerate}
+\end{definition}
+
+\begin{lemma}\label{lem:gadget-encoding}
+For every field $\F$, every $\ell\ge1$, and every $M\in\{0,1\}^{\ell\times\ell}$, the universe $\cU([\ell]\times[\ell])$ of Definition~\ref{def:gadget}, together with the complexes $K_{R,J}=\Kswitch{M}{R}{J}$, is an encoding of $M$ over~$\F$, in which the triangles of~\ref{enc:switch} are the fillings $D_i$ and~$E_j$.
+This universe has $\Theta(\ell^2)$ simplices and can be constructed in time $O(\ell^2)$.
+\end{lemma}
+
+\begin{proof}
+Property~\ref{enc:skeleton} holds by Definition~\ref{def:gadget}, and property~\ref{enc:rank} is Lemma~\ref{lem:crux} with $A=M$ and $P=[\ell]\times[\ell]$.
+By Definition~\ref{def:gadget}, the complex $\Kswitch{M}{R}{J}$ consists of $\Kswitch{M}{[\ell]}{\emptyset}$ together with the fillings $D_i$ for $i\notin R$ and $E_j$ for $j\in J$, none of which lies in $\Kswitch{M}{[\ell]}{\emptyset}$; this is~\ref{enc:switch}.
+The size and the construction time are stated in Section~\ref{sec:equiv}.
+\end{proof}
+
+\begin{lemma}\label{lem:round}
+Let $\cU$, together with the complexes $K_{R,J}$, be an encoding of $M\in\{0,1\}^{\ell\times\ell}$ over~$\F$.
+\begin{enumerate}[label=(\roman*)]
+\item For all $u,v\in\{0,1\}^{\ell}$, we have $u^{\top}Mv=1$ if and only if $\beta_2(K_{\supp u,\supp v};\F)<|\supp v|$.
+\item For all $R,J\subseteq[\ell]$,
+\[
+  \beta_2(K_{R,J})=\beta_1(K_{R,J})-\beta_1(\cU^{(1)})+n_2(K_{R,J}),
+\]
+where $\cU^{(1)}$ is the $1$-skeleton of~$\cU$, so that $\beta_1(\cU^{(1)})=\beta_0(\cU^{(1)})-n_0(\cU)+n_1(\cU)$.
+\item For all $R,J,R',J'\subseteq[\ell]$, the $|R\triangle R'|+|J\triangle J'|$ insertions and deletions of the triangles $D_i$, $i\in R\triangle R'$, and $E_j$, $j\in J\triangle J'$, in any order, transform $K_{R,J}$ into $K_{R',J'}$, and every intermediate family of simplices is a subcomplex of~$\cU$.
+If $R'\subseteq R$ and $J\subseteq J'$, the sequence consists of insertions only; if $R\subseteq R'$ and $J'\subseteq J$, it consists of deletions only.
+\end{enumerate}
+\end{lemma}
+
+\begin{proof}
+(i) Let $R=\supp u$ and $J=\supp v$; Figure~\ref{fig:oumv} illustrates this part for the gadget.
+By property~\ref{enc:rank}, the inequality $\beta_2(K_{R,J})<|J|$ holds if and only if $\rk_{\F}M[R,J]\ge1$, that is, if and only if the submatrix $M[R,J]$ has a nonzero entry.
+Since the entries of $M$ are $0$ and $1$, and $1\ne0$ in~$\F$, this happens if and only if $M_{ij}=1$ for some $i\in R$ and $j\in J$.
+This is the condition $u^{\top}Mv=1$.
+
+(ii) Let $K=K_{R,J}$.
+By~\ref{enc:skeleton}, $K$ has the same vertices and edges as~$\cU$.
+Hence $n_0(K)=n_0(\cU)$ and $n_1(K)=n_1(\cU)$, and $\beta_0(K)=\beta_0(\cU^{(1)})$ because $\beta_0$ depends only on vertices and edges.
+Since $\dim K\le2$, we have $\chi(K)=n_0(K)-n_1(K)+n_2(K)$, and~\eqref{eq:euler} gives
+\[
+  \beta_1(K)=\beta_0(\cU^{(1)})+\beta_2(K)-n_0(\cU)+n_1(\cU)-n_2(K),
+\]
+which is the claim.
+
+(iii) By~\ref{enc:switch}, $K_{R',J'}$ arises from $K_{R,J}$ by inserting $D_i$ for $i\in R\setminus R'$ and $E_j$ for $j\in J'\setminus J$, and by deleting $D_i$ for $i\in R'\setminus R$ and $E_j$ for $j\in J\setminus J'$.
+Every intermediate family consists of all vertices and edges of $\cU$, by~\ref{enc:skeleton}, and some of its triangles.
+Since $\cU$ is $2$-dimensional, such a family is a subcomplex of~$\cU$, every inserted triangle has its edges present, and no deleted triangle has a cofacet; so every update satisfies the preconditions of Problem~\ref{prob:betti}.
+If $R'\subseteq R$ and $J\subseteq J'$, all these updates are insertions; if $R\subseteq R'$ and $J'\subseteq J$, all are deletions.
+\end{proof}
+
+\input{figures/fig-oumv}
+
+\subsection{Amortized lower bounds}\label{sec:lower-amortized}
+
+\begin{theorem}\label{thm:omv}\label{thm:tradeoff}
+Let $\F$ be a field, let $p\in\{1,2\}$, and let $\eps>0$.
+If the \OMv\ conjecture holds, then no data structure for dynamic $\beta_p$ over $\F$ on $2$-dimensional universes has polynomial preprocessing time, amortized update time $O(n^{1/2-\eps})$, and query time $O(n^{1-\eps})$.
+\end{theorem}
+
+\begin{proof}
+Suppose that $\mathcal{D}$ is such a data structure.
+We use it to solve \OuMv\ for matrices $M\in\{0,1\}^{\ell\times\ell}$ and $\ell$ requests.
+Let $\cU$, together with the complexes $K_{R,J}$, be the encoding of $M$ over $\F$ from Lemma~\ref{lem:gadget-encoding}, and let $n=|\cU|=\Theta(\ell^2)$.
+
+\emph{Preprocessing.}
+We construct~$\cU$, compute the number $\beta_1(\cU^{(1)})$ of Lemma~\ref{lem:round}(ii), and initialize $\mathcal{D}$ with the universe~$\cU$.
+Then we insert the simplices of $K_{[\ell],\emptyset}$ into $\mathcal{D}$ in order of increasing dimension, so that every insertion is valid.
+We maintain sets $R,J\subseteq[\ell]$ such that $\mathcal{D}$ stores $K_{R,J}$, initially $R=[\ell]$ and $J=\emptyset$, together with the number $n_2(K_{R,J})$ of its triangles.
+
+\emph{Requests.}
+For a request $(u,v)$, let $R'=\supp u$ and $J'=\supp v$.
+We perform the at most $|R\triangle R'|+|J\triangle J'|\le2\ell$ updates of Lemma~\ref{lem:round}(iii), which transform $K_{R,J}$ into $K_{R',J'}$, and we set $R=R'$ and $J=J'$.
+Then we query~$\mathcal{D}$.
+If $p=2$, the answer is $\beta_2(K_{R,J})$; if $p=1$, we compute $\beta_2(K_{R,J})$ from the answer by Lemma~\ref{lem:round}(ii).
+We output $1$ if $\beta_2(K_{R,J})<|J|$, and $0$ otherwise.
+By Lemma~\ref{lem:round}(i), the output is $u^{\top}Mv$.
+
+\emph{Running time.}
+In total, $\mathcal{D}$ processes at most $n+2\ell^2=O(\ell^2)$ updates: at most $n$ insertions that create $K_{[\ell],\emptyset}$ and at most $2\ell$ updates per request.
+By the definition of amortized time (Section~\ref{sec:prelim}), after the preprocessing of~$\mathcal{D}$ these updates together with the $\ell$ interleaved queries take total time $O((2n+2\ell^2)\cdot n^{1/2-\eps}+\ell\cdot n^{1-\eps})=O(\ell^{3-2\eps})$.
+Reading a request, computing $R\triangle R'$ and $J\triangle J'$, and maintaining the counter take $O(\ell)$ time per request.
+The preprocessing of $\mathcal{D}$ takes time polynomial in $n$, and hence in~$\ell$.
+So the preprocessing time is polynomial in~$\ell$, and the computation time is $O(\ell^{3-2\eps}+\ell^2)=O(\ell^{3-\delta})$ for $\delta=\min\{2\eps,1\}>0$.
+This contradicts the consequence of the \OMv\ conjecture stated in Section~\ref{sec:lower-round}.
+
+We note for later use that the argument runs $\mathcal{D}$ only on the universes $\cU([\ell]\times[\ell])$, $\ell\ge1$, and that it uses these universes only through properties~\ref{enc:skeleton}--\ref{enc:switch}, the bound $n=O(\ell^2)$, and the polynomial construction time.
+\end{proof}
+
+Since worst-case bounds imply amortized bounds (Section~\ref{sec:prelim}), Theorem~\ref{thm:omv} also excludes worst-case update time $O(n^{1/2-\eps})$ together with query time $O(n^{1-\eps})$.
+The reduction is deterministic.
+The requests of an \OuMv\ instance may depend on the answers to earlier requests, for example when the instance is produced by the reduction from \OMv\ in~\cite{HKNS15full}; but as long as all earlier answers are correct, the requests, and hence the operations that the reduction performs on~$\mathcal{D}$, are determined by the input.
+Hence the theorem also applies to randomized data structures that, for every fixed sequence of operations, answer all queries correctly with probability at least~$2/3$: we apply this guarantee to the sequence that arises when all answers are correct.
+It also applies to data structures whose time bounds hold only in expectation: we run $k$ independent copies, abort a copy once its running time exceeds $12$ times its expected bound, and output the answer given by more than $k/2$ copies; by Markov's inequality, each copy answers all requests correctly within this time with probability at least $2/3-1/12=7/12>1/2$, so for a large enough constant $k$ more than $k/2$ copies do so with probability at least $2/3$.
+In the operation sequences of the proof, all vertices and edges of the universe are inserted during preprocessing and are never deleted, and afterwards only triangles are inserted and deleted.
+So the hardness does not come from changes of the $1$-skeleton; moreover, after preprocessing the maintained complex has $\Theta(n)$ simplices, so the bound also holds with $n$ replaced by the size of the current complex.
+
+\paragraph{Output-sensitive data structures.}
+Inserting or deleting a $q$-simplex changes exactly one Betti number, namely $\beta_q$ or $\beta_{q-1}$, and changes it by exactly one.
+Indeed, inserting a $q$-simplex adds a column to $\bd_q$, which changes $\rk\bd_q$ by zero or one, and it does not change $\rk\bd_{q+1}$, because no coface of the new simplex is present; by~\eqref{eq:betti-rank}, either $\beta_q$ increases by one or $\beta_{q-1}$ decreases by one, and deletions are symmetric.
+So the number of changes of the Betti numbers is exactly one per update, and Theorem~\ref{thm:omv} also excludes output-sensitive data structures whose update time is $O(f(n)+k\cdot g(n))$ with $f(n)+g(n)=O(n^{1/2-\eps})$, where $k$ is the number of changes, together with query time $O(n^{1-\eps})$.
+This contrasts with time series, where the banana trees of Cultrera di Montesano et al.~\cite{CEHO24} absorb a local change in time $O(\log n+k)$, with $k$ the number of changes of the persistence diagram.
+
+\paragraph{Higher Betti numbers.}
+For $p\ge3$ we iterate the suspension of Section~\ref{sec:equiv-thm}.
+For a universe $\cU$ and $m\ge0$, the \emph{$m$-fold suspension} is defined by $S^0\cU=\cU$ and $S^m\cU=S(S^{m-1}\cU)$, where each suspension uses two new vertices.
+For a subcomplex $K\subseteq\cU$ we define $S^mK$ in the same way, with the same new vertices as for~$\cU$.
+For $m\ge1$, the complex $S^m\emptyset$ is not empty; for instance, $S\emptyset$ consists of the two new vertices.
+
+\begin{lemma}\label{lem:lift}
+Let $\cU$ be a nonempty universe with $n$ simplices, and let $m\ge0$.
+\begin{enumerate}[label=(\roman*)]
+\item For every subcomplex $K\subseteq\cU$, the complex $S^mK$ is a subcomplex of $S^m\cU$, and $\beta_{q+m}(S^mK;\F)=\beta_q(K;\F)$ for every field $\F$ and every $q\ge1$.
+\item $\dim S^m\cU=\dim\cU+m$, $|S^m\cU|<3^m(n+1)$, and $|S^m\emptyset|<3^m$.
+\item If $K'$ arises from a subcomplex $K\subseteq\cU$ by one simplex insertion (deletion), then some sequence of $3^m$ simplex insertions (deletions) transforms $S^mK$ into $S^mK'$, and every intermediate family is a subcomplex of $S^m\cU$.
+\item For fixed $m$ and every $q\ge1$, dynamic $\beta_q$ over $\F$ on $\cU$ reduces to dynamic $\beta_{q+m}$ over $\F$ on $S^m\cU$ with overhead $(3^m,1)$, and the reduction carries out insertions by insertions and deletions by deletions.
+\end{enumerate}
+\end{lemma}
+
+\begin{proof}
+We prove (i)--(iii) by induction on~$m$; the case $m=0$ is trivial.
+Let $m\ge1$, let $L=S^{m-1}K$ and $V=S^{m-1}\cU$, so that $S^mK=SL$ and $S^m\cU=SV$.
+
+(i) By induction $L\subseteq V$, and the suspension preserves inclusion, so $SL\subseteq SV$.
+By Lemma~\ref{lem:suspension} with $p=q+m-1\ge1$, and by induction, $\beta_{q+m}(SL)=\beta_{q+m-1}(L)=\beta_q(K)$.
+
+(ii) Since $V\supseteq\cU$ is not empty, $\dim SV=\dim V+1$.
+The suspension of a complex $X$ has $|X|+2+2|X|=3|X|+2$ simplices.
+By induction $|V|\le3^{m-1}(n+1)-1$, so $|SV|\le3^m(n+1)-1$.
+The same computation, starting from $|\emptyset|=0$, gives $|S^m\emptyset|\le3^m-1$.
+
+(iii) By induction, a sequence of $3^{m-1}$ updates of the same kind transforms $L$ into $S^{m-1}K'$ through subcomplexes of~$V$.
+By Lemma~\ref{lem:suspension}, each of these updates is carried out by three updates of the same kind on the suspension, through subcomplexes of~$SV$.
+
+(iv) The universe $S^m\cU$ can be computed in polynomial time, and $|S^m\cU|=O(n)$ by~(ii).
+During preprocessing we insert the $3^m-1$ simplices of $S^m\emptyset$ in order of increasing dimension.
+Afterwards the data structure for $S^m\cU$ stores $S^mK$.
+Every update of $K$ is carried out by the $3^m$ updates of~(iii), and a query for $\beta_q(K)$ is answered by a query for $\beta_{q+m}(S^mK)$, by~(i).
+\end{proof}
+
+\begin{corollary}\label{cor:allp}
+Let $\F$ be a field, let $p\ge1$ be an integer, and let $\eps>0$.
+If the \OMv\ conjecture holds, then no data structure for dynamic $\beta_p$ over $\F$ on universes of dimension $\max\{p,2\}$ has polynomial preprocessing time, amortized update time $O(n^{1/2-\eps})$, and query time $O(n^{1-\eps})$.
+\end{corollary}
+
+\begin{proof}
+For $p\le2$ this is Theorem~\ref{thm:omv}.
+Let $p\ge3$, let $m=p-2$, and suppose that $\mathcal{D}$ is such a data structure.
+For $\cU=\cU([\ell]\times[\ell])$, the universe $S^m\cU$ has dimension~$p$ and $O(n)$ simplices by Lemma~\ref{lem:lift}(ii).
+By Lemma~\ref{lem:lift}(iv) and the paragraph on reductions in Section~\ref{sec:prelim}, running $\mathcal{D}$ on $S^m\cU$ yields a data structure for dynamic $\beta_2$ over $\F$ on the universes $\cU([\ell]\times[\ell])$ with polynomial preprocessing time, amortized update time $O(n^{1/2-\eps})$, and query time $O(n^{1-\eps})$.
+By the proof of Theorem~\ref{thm:omv}, no such data structure exists.
+\end{proof}
+
+The dimension $\max\{p,2\}$ in Corollary~\ref{cor:allp} cannot be lowered.
+If $\dim\cU<p$, then $\beta_p(K)=0$ for every subcomplex $K\subseteq\cU$.
+If $\dim\cU\le1$, then $\beta_1(K)=n_1(K)-n_0(K)+\beta_0(K)$ by~\eqref{eq:euler}, and $\beta_0(K)$ is the number of connected components of the graph~$K$, which a dynamic connectivity structure maintains in $O(\log^2n)$ amortized time per update~\cite{HDT01}.
+The same structure maintains $\beta_0$ of every complex (Section~\ref{sec:easy}).
+So the lower bounds concern exactly the Betti numbers $\beta_p$ with $p\ge1$ on universes of dimension at least $\max\{p,2\}$.
+
+\subsection{Persistent Betti numbers}\label{sec:lower-persistence}
+
+We now consider sublevel-set filtrations of functions whose values change.
+A function $f\colon\cU\to\R$ on a universe is \emph{monotone} if $f(\tau)\le f(\sigma)$ whenever $\tau\subseteq\sigma$.
+For such $f$ and $t\in\R$, the \emph{sublevel set} ${\cU_t=\{\sigma\in\cU:f(\sigma)\le t\}}$ is a subcomplex of~$\cU$, because the faces of a simplex $\sigma\in\cU_t$ have values at most $f(\sigma)\le t$.
+
+\begin{problem}[Sublevel-set persistence]\label{prob:sublevel}
+Fix a field $\F$ and an integer $p\ge0$.
+The instance is a universe $\cU$ with $n$ simplices and a monotone function $f_0\colon\cU\to\R$.
+The data structure maintains a monotone function $f\colon\cU\to\R$, initially $f_0$, under the operations
+\begin{itemize}
+\item $\Set(\sigma,x)$, for $\sigma\in\cU$ and a rational number $x$, given in binary, such that the function obtained from $f$ by changing its value at $\sigma$ to $x$ is monotone, which makes this change;
+\item $\Query(s,t)$, for real numbers $s\le t$, which returns the \emph{persistent Betti number} $\beta_p^{s,t}(f)$, the rank of the linear map $H_p(\cU_s;\F)\to H_p(\cU_t;\F)$ induced by the inclusion $\cU_s\subseteq\cU_t$.
+\end{itemize}
+\end{problem}
+
+We call $\Set$ a \emph{value update}.
+By the structure theorem for persistence modules~\cite{ZC05}, the vector spaces $H_p(\cU_t;\F)$, $t\in\R$, together with the maps induced by inclusions, decompose into intervals, which form the degree-$p$ \emph{barcode} of~$f$.
+The persistent Betti number $\beta_p^{s,t}(f)$ is the number of intervals of the barcode that contain both $s$ and~$t$~\cite{ELZ02,EH10}.
+
+\begin{lemma}\label{lem:sublevel}
+Let $\F$ be a field and let $p\ge0$.
+Dynamic $\beta_p$ over $\F$ on a universe $\cU$ reduces to Problem~\ref{prob:sublevel} over $\F$ on the same universe with overhead $(1,1)$.
+In the reduction, $f$ takes values in $\{0,1\}$, and every query is $\Query(0,0)$.
+\end{lemma}
+
+\begin{proof}
+For a subcomplex $K\subseteq\cU$, let $f_K(\sigma)=0$ if $\sigma\in K$ and $f_K(\sigma)=1$ otherwise.
+The function $f_K$ is monotone: if $\tau\subseteq\sigma$ and $f_K(\sigma)=0$, then $\sigma\in K$, so $\tau\in K$ and $f_K(\tau)=0$; if $f_K(\sigma)=1$, then $f_K(\tau)\le f_K(\sigma)$ trivially.
+Its sublevel set at~$0$ is~$K$.
+We let $f_0=f_{\emptyset}$, the constant function~$1$, and we maintain the invariant $f=f_K$.
+An update $\Insert(\sigma)$ produces the subcomplex $K\cup\{\sigma\}$, so $\Set(\sigma,0)$ is a valid value update that restores the invariant.
+Similarly, $\Delete(\sigma)$ is carried out by $\Set(\sigma,1)$.
+A query is answered by $\Query(0,0)$, which returns the rank of the identity map of $H_p(K;\F)$, that is, $\beta_p(K;\F)$.
+\end{proof}
+
+\begin{corollary}\label{cor:persistence}
+Let $\F$ be a field, let $p\ge1$, and let $\eps>0$.
+If the \OMv\ conjecture holds, then no data structure for Problem~\ref{prob:sublevel} over $\F$ on universes of dimension $\max\{p,2\}$ has polynomial preprocessing time, amortized update time $O(n^{1/2-\eps})$, and query time $O(n^{1-\eps})$.
+This holds even when $f$ takes values in $\{0,1\}$ and every query is $\Query(0,0)$.
+\end{corollary}
+
+\begin{proof}
+By Lemma~\ref{lem:sublevel} and the paragraph on reductions in Section~\ref{sec:prelim}, such a data structure yields a data structure for dynamic $\beta_p$ over $\F$ on the same universes with polynomial preprocessing time, amortized update time $O(n^{1/2-\eps})$, and query time $O(n^{1-\eps})$.
+The reduction uses only values in $\{0,1\}$ and only queries $\Query(0,0)$, so a data structure that supports only these suffices.
+This contradicts Corollary~\ref{cor:allp}.
+\end{proof}
+
+Corollary~\ref{cor:persistence} applies to every data structure that maintains the barcode under value updates and counts, within the stated time bounds, the intervals that contain two given numbers.
+We ask for this count rather than for the barcode itself, because the barcode can have $\Theta(n)$ intervals and listing them takes linear time.
+Explicit maintenance of the barcode is excluded as well.
+In the reduction, $f$ takes only the values $0$ and~$1$, so the barcode of $H_p$ consists of $\beta_p(K)-\rho$ copies of $[0,1)$, $\rho$ copies of $[0,\infty)$, and $\beta_p(\cU)-\rho$ copies of $[1,\infty)$, where $K=\cU_0$ and $\rho$ is the rank of the map $H_p(K)\to H_p(\cU)$.
+A value update changes $K$ by one simplex, which changes $\beta_p(K)$ by at most one and, since $H_p$ of the larger complex is spanned by the image of $H_p$ of the smaller one and at most one further class, also changes $\rho$ by at most one.
+So every value update changes $O(1)$ intervals, and Corollary~\ref{cor:persistence} applies to every data structure that maintains the barcode explicitly, even an output-sensitive one.
+Corollary~\ref{cor:persistence} also holds for injective functions, so data structures that assume distinct values gain nothing.
+Fix an injective map $\mathrm{id}\colon\cU\to[n]$, let $d=\dim\cU$, and let $g(\sigma)=(\dim\sigma+\mathrm{id}(\sigma)/(n+1))/(2d+2)\in[0,\frac12)$.
+In the proof of Lemma~\ref{lem:sublevel}, replace $f_K$ by the function that is $g(\sigma)$ on $\sigma\in K$ and $1+g(\sigma)$ on $\sigma\notin K$, and $\Query(0,0)$ by $\Query(\frac12,\frac12)$.
+This function is injective, it is monotone because $g$ increases strictly from a simplex to each of its cofaces, its sublevel set at $\frac12$ is~$K$, and a simplex update of $K$ is still a single value update.
+In the operation sequences obtained from the proof of Theorem~\ref{thm:omv} through Lemma~\ref{lem:sublevel}, all vertices and edges have value~$0$ after preprocessing, and only the values of triangles change.
+
+
+\subsection{Online zigzag persistence}\label{sec:zigzag}
+
+A sequence of simplex insertions and deletions is the same as a simplex-wise \emph{zigzag filtration}
+\[
+  \emptyset=K_0\leftrightarrow K_1\leftrightarrow\cdots\leftrightarrow K_L,
+\]
+in which every $K_t$ arises from $K_{t-1}$ by inserting or deleting one simplex.
+Zigzag persistence~\cite{CdS10} assigns to such a filtration a barcode: a multiset of intervals of indices.
+The number of intervals of the barcode of $H_p$ that contain the index $t$ is $\beta_p(K_t)$.
+Algorithms for zigzag persistence go back to Carlsson, de Silva, and Morozov~\cite{CdSM09}; Maria and Oudot~\cite{MO15} update a zigzag barcode under one simplex insertion or removal at a time, in cubic total time in the worst case.
+Offline, zigzag persistence can be computed in matrix multiplication time~\cite{MMS11}, and in practice by a reduction to standard persistence~\cite{DH22}; for graphs, near-linear time suffices~\cite{DH21z,DHP23}.
+We call an algorithm \emph{online} if it receives the steps one at a time and, after step $t$, has reported all intervals that begin at~$t$ or end at~$t-1$.
+Such an algorithm knows how many intervals of the barcode of $H_p$ contain~$t$, so it maintains $\beta_p(K_t)$ with $O(1)$ extra work per step.
+
+\begin{corollary}[Online zigzag persistence]\label{cor:zigzag}
+Assume the \OMv\ conjecture, and let $\F$ be a field and $\eps>0$.
+No online algorithm computes the barcode of $H_1$ over~$\F$ of zigzag filtrations of length~$L$ of subcomplexes of a $2$-dimensional universe in total time $O(L^{3/2-\eps})$, even with polynomial preprocessing of the universe.
+In particular, the amortized time per step cannot be $O(L^{1/2-\eps})$.
+\end{corollary}
+
+\begin{proof}
+The reduction in the proof of Theorem~\ref{thm:omv} produces, for an \OuMv\ instance of dimension~$\ell$, a universe with $n=\Theta(\ell^2)$ simplices and a sequence of $L=\Theta(\ell^2)$ simplex insertions and deletions, interleaved with $\ell$ queries of $\beta_1$.
+The steps of each round are determined by the request $(u,v)$ of that round, and the answer to the round is needed before the next request arrives; an online zigzag algorithm provides it in time.
+An online zigzag algorithm answers each query in $O(1)$ time from its count of intervals containing the current index.
+If its total time were $O(L^{3/2-\eps})=O(\ell^{3-2\eps})$, then \OuMv\ would be solvable in time $O(\ell^{3-2\eps}+\ell^2)=O(\ell^{3-\delta})$, with $\delta=\min\{2\eps,1\}$, after polynomial preprocessing, contradicting the \OMv\ conjecture.
+\end{proof}
+
+By Theorem~\ref{thm:acyclic}, the same bound holds for filtrations in which every complex at which the reduction reads off an answer is connected and has $\beta_1=\beta_2\le1$.
+Offline, the whole barcode can be computed in time $O(L^{\omega})$~\cite{MMS11}, which exceeds $L^{3/2}$ because $\omega\ge2$, so Corollary~\ref{cor:zigzag} does not separate the online from the offline setting.
+What it rules out is an online algorithm with amortized time $L^{1/2-\eps}$ per step; for graphs, in contrast, the number of intervals containing the current index is maintained online in polylogarithmic amortized time per step by dynamic connectivity (Proposition~\ref{prop:beta0}).
+
+\subsection{Worst-case lower bounds}\label{sec:lower-worst}
+
+\paragraph{Partially dynamic data structures.}
+\emph{Incremental} dynamic $\beta_p$ over $\F$ is the variant of Problem~\ref{prob:betti} in which the instance also contains a subcomplex $K_0\subseteq\cU$, the data structure starts with $K=K_0$, and the only updates are insertions.
+\emph{Decremental} dynamic $\beta_p$ over $\F$ is defined in the same way, with deletions instead of insertions.
+In both variants the data structure may preprocess $K_0$ together with~$\cU$.
+
+\begin{theorem}\label{thm:partial}
+Let $\F$ be a field, let $p\ge1$, and let $\eps>0$.
+If the \OMv\ conjecture holds, then no data structure for incremental dynamic $\beta_p$ over~$\F$, and no data structure for decremental dynamic $\beta_p$ over~$\F$, on universes of dimension $\max\{p,2\}$ has polynomial preprocessing time, worst-case update time $O(n^{1/2-\eps})$, and query time $O(n^{1-\eps})$.
+\end{theorem}
+
+\begin{proof}
+First let $p\in\{1,2\}$.
+We use the rollback technique~\cite{AV14,HKNS15}.
+Suppose that $\mathcal{D}$ is an incremental data structure with the stated bounds.
+Let $M\in\{0,1\}^{\ell\times\ell}$ be the matrix of an instance of \OuMv, and let $\cU$, together with the complexes $K_{R,J}$, be the encoding of $M$ over $\F$ from Lemma~\ref{lem:gadget-encoding}.
+
+\emph{Rollback.}
+We run $\mathcal{D}$ under a simulator that records, for every write to a memory cell, the address and the previous content of the cell in a log.
+Replaying a log backwards restores every cell written since the log was started.
+Afterwards the memory of $\mathcal{D}$, and hence its state, is the same as when the log was started.
+The simulation and the log slow $\mathcal{D}$ down by a constant factor.
+An operation writes at most as many cells as it takes steps, so an update and its rollback take worst-case time $O(n^{1/2-\eps})$, and a query and its rollback take worst-case time $O(n^{1-\eps})$.
+
+\emph{Preprocessing.}
+We construct $\cU$, compute~$\beta_1(\cU^{(1)})$, and initialize $\mathcal{D}$ with the universe $\cU$ and the initial complex $K_0=K_{[\ell],\emptyset}$.
+This takes time polynomial in~$\ell$.
+
+\emph{Requests.}
+For a request $(u,v)$, let $R'=\supp u$ and $J'=\supp v$.
+Since $R'\subseteq[\ell]$ and $\emptyset\subseteq J'$, Lemma~\ref{lem:round}(iii) gives a sequence of at most $2\ell$ triangle insertions that transforms $K_{[\ell],\emptyset}$ into $K_{R',J'}$.
+We start a new log, perform these insertions, and query~$\mathcal{D}$.
+If $p=1$, we compute $\beta_2(K_{R',J'})$ from the answer by Lemma~\ref{lem:round}(ii), where $n_2(K_{R',J'})$ is $n_2(K_0)$ plus the number of inserted triangles.
+We output $1$ if $\beta_2(K_{R',J'})<|J'|$ and $0$ otherwise, which is $u^{\top}Mv$ by Lemma~\ref{lem:round}(i).
+Finally we roll back the log.
+Then $\mathcal{D}$ is again in the state it had after preprocessing, and it stores $K_{[\ell],\emptyset}$.
+Between two rollbacks, $\mathcal{D}$ receives a sequence of insertions that starts from~$K_0$, so its guarantees on correctness and running time apply.
+
+\emph{Running time.}
+A request takes time $O(\ell\cdot n^{1/2-\eps}+n^{1-\eps}+\ell)=O(\ell^{2-2\eps}+\ell)$.
+So the computation time is $O(\ell^{3-2\eps}+\ell^2)=O(\ell^{3-\delta})$ for $\delta=\min\{2\eps,1\}>0$, and the preprocessing time is polynomial in~$\ell$.
+This contradicts the consequence of the \OMv\ conjecture stated in Section~\ref{sec:lower-round}.
+
+For a decremental data structure we use $K_0=K_{\emptyset,[\ell]}$ instead.
+Since $\emptyset\subseteq R'$ and $J'\subseteq[\ell]$, Lemma~\ref{lem:round}(iii) now gives at most $2\ell$ triangle deletions, and the rest of the argument is unchanged.
+As for Theorem~\ref{thm:omv}, both arguments use only properties~\ref{enc:skeleton}--\ref{enc:switch}, the bound $n=O(\ell^2)$, and the polynomial construction time of the encodings.
+
+Now let $p\ge3$ and $m=p-2$.
+The reduction of Lemma~\ref{lem:lift}(iv) maps an initial complex $K_0$ to $S^mK_0$, insertions to insertions, and deletions to deletions.
+By Lemma~\ref{lem:lift}(ii), $S^m\cU([\ell]\times[\ell])$ has dimension $p$ and $O(n)$ simplices.
+Hence a data structure as in the theorem for $\beta_p$ yields an incremental, respectively decremental, data structure for $\beta_2$ on the universes $\cU([\ell]\times[\ell])$ with polynomial preprocessing time, worst-case update time $O(n^{1/2-\eps})$, and query time $O(n^{1-\eps})$, which we have just excluded.
+\end{proof}
+
+The rollback argument needs worst-case bounds.
+An amortized data structure may perform an expensive operation, such as a rebuild, whose cost is charged to many earlier updates.
+After a rollback, the next request can trigger the same expensive operation again, so the total time is no longer bounded by the number of updates times the amortized update time.
+Theorem~\ref{thm:partial} also applies to randomized data structures that answer each query correctly with probability at least $1-1/n$.
+Indeed, as long as all earlier answers are correct, each answer is produced by a run of $\mathcal{D}$ on a sequence of operations that is determined by the input, namely the preprocessing followed by the operations of one request.
+By a union bound, all $\ell$ answers are correct with probability at least $1-\ell/n\ge2/3$ for all sufficiently large~$\ell$, since $n=\Theta(\ell^2)$.
+
+\paragraph{Fully dynamic data structures.}
+For fully dynamic data structures with worst-case bounds, Theorem~\ref{thm:omv} gives the lower bound discussed after its proof.
+Stronger worst-case lower bounds follow from lower bounds for dynamic rank.
+Recall that an entry flip replaces an entry $A_{ij}$ of a $0/1$ matrix by $1-A_{ij}$.
+
+\begin{theorem}\label{thm:worstcase}
+Let $\F$ be a field, let $p\ge1$ be an integer, and let $\alpha>0$.
+Suppose that for every $\eps>0$ no data structure maintains $\rk_{\F}A$ for a matrix $A\in\{0,1\}^{\ell\times\ell}$, initially zero, under entry flips, with polynomial preprocessing time and worst-case time $O(\ell^{\alpha-\eps})$ per flip, where the time of a flip includes reporting the rank after the flip.
+Then for every $\eps>0$ no data structure for dynamic $\beta_p$ over $\F$ on universes of dimension $\max\{p,2\}$ has polynomial preprocessing time, worst-case update time $O(n^{\alpha/2-\eps})$, and query time $O(n^{\alpha/2-\eps})$.
+\end{theorem}
+
+\begin{proof}
+Suppose that $\mathcal{D}$ is such a data structure.
+First let $p\in\{1,2\}$.
+Maintaining $\rk_{\F}A$ under entry flips is the special case of Problem~\ref{prob:rank} with $r=k=\ell$, $P=[\ell]\times[\ell]$, $0/1$ entries, and no switches; its instance size is $\Theta(\ell^2)$.
+By Theorem~\ref{thm:equiv}(ii), this problem reduces to dynamic $\beta_p$ over $\F$ on the $2$-dimensional universe $\cU([\ell]\times[\ell])$, which has $n=\Theta(\ell^2)$ simplices, with constant overhead.
+The reduction makes $O(n)$ insertions during preprocessing, which take time $O(n\cdot n^{\alpha/2-\eps})$, polynomial in~$\ell$.
+After a flip we report the rank with one query.
+So $\mathcal{D}$ yields a data structure for the rank problem with polynomial preprocessing time and worst-case time $O(n^{\alpha/2-\eps})=O(\ell^{\alpha-2\eps})$ per flip, including the report of the rank.
+This contradicts the hypothesis with $2\eps$ in place of~$\eps$.
+
+For $p\ge3$, Lemma~\ref{lem:lift}(iv) with $m=p-2$ turns $\mathcal{D}$ into a data structure for dynamic $\beta_2$ over $\F$ on the universes $\cU([\ell]\times[\ell])$ with polynomial preprocessing time and worst-case update and query time $O(n^{\alpha/2-\eps})$, because $S^{m}\cU([\ell]\times[\ell])$ has dimension $p$ and $O(n)$ simplices.
+The argument for $p=2$ applies to this data structure.
+\end{proof}
+
+We use the following Schur-complement identity here and in Section~\ref{sec:acyclic}.
+\begin{lemma}\label{lem:bordered}
+Let $Y\in\F^{m\times m}$ be invertible and $x,w\in\F^m$. Then
+\[
+  \rk\begin{pmatrix}Y&w\\x^{\top}&0\end{pmatrix}\;=\;m+\bigl[x^{\top}Y^{-1}w\neq0\bigr],
+\]
+where $[\,\cdot\,]$ is $1$ if the condition in brackets holds and $0$ otherwise.
+\end{lemma}
+\begin{proof}
+The matrix equals \[\begin{pmatrix}I&0\\x^{\top}Y^{-1}&1\end{pmatrix}\begin{pmatrix}Y&w\\0&-x^{\top}Y^{-1}w\end{pmatrix}.\]
+The first factor is invertible, and the second is block triangular with an invertible diagonal block~$Y$.
+\end{proof}
+
+The hypothesis of Theorem~\ref{thm:worstcase} follows from a hinted variant of the \OMv\ conjecture.
+Van den Brand, Nanongkai, and Saranurak~\cite[Conjecture~5.12]{vdBNS19full} conjecture the hardness of the \emph{\uMv-hinted \uMv} problem~\cite[Definition~5.11]{vdBNS19full}.
+In the form used in the proof of~\cite[Theorem~5.13]{vdBNS19full}, this problem maintains a product $M_1M_2M_3M_4M_5$ of five Boolean matrices of dimension at most~$s$: the matrices $M_1$, $M_3$, $M_5$ are given in advance, $M_2$ and $M_4$ start at zero and receive element updates, and a single query asks for one entry of the product.
+Under the conjecture, every data structure for it with polynomial preprocessing time needs worst-case time $s^{\alpha-o(1)}$ per update or per query; we call this consequence the \emph{five-matrix bound}.
+Its exponent $\alpha$ is a function of the exponents of rectangular matrix multiplication.
+It satisfies $\alpha\ge5/4$, with equality if $\omega=2$, and $\alpha\approx1.407$ with the current bounds on these exponents, which also give the exponent $1.407$ of the dynamic rank algorithm of~\cite{vdBNS19} (Corollary~\ref{cor:upper} below).
+As for the \OMv\ conjecture, we read the conjecture as a statement about randomized algorithms with error probability at most~$1/3$; the lower bound of van den Brand et al.\ for dynamic rank, discussed after the next proof, relies on this reading as well.
+
+\begin{corollary}[Worst-case lower bound]\label{cor:hinted}
+Let $\F$ be a field, let $p\ge1$, and let $\eps>0$.
+If the \uMv-hinted \uMv\ conjecture~\cite[Conjecture~5.12]{vdBNS19full} holds, then no data structure for dynamic $\beta_p$ over $\F$ on universes of dimension $\max\{p,2\}$ has polynomial preprocessing time, worst-case update time $O(n^{\alpha/2-\eps})$, and query time $O(n^{\alpha/2-\eps})$.
+Here $\alpha\ge5/4$ is the exponent of the five-matrix bound; with the current bounds on rectangular matrix multiplication, $\alpha/2\approx0.703$.
+\end{corollary}
+
+\begin{proof}
+By Theorem~\ref{thm:worstcase}, it suffices to rule out a data structure $\mathcal{R}$ with the following properties.
+It maintains $\rk_{\F}A$ of a matrix $A\in\{0,1\}^{\ell\times\ell}$ under entry flips.
+It has polynomial preprocessing time.
+It takes worst-case time $O(\ell^{\alpha-\eps})$ per flip, including the report of the rank.
+By running a constant number of independent copies and taking majority votes, we may assume that $\mathcal{R}$ errs with probability at most $1/1000$ on every fixed operation sequence.
+
+Suppose that $\mathcal{R}$ exists, and consider an instance of the five-matrix product problem above.
+During preprocessing we draw independent, uniformly random $0/1$ matrices $\Xi_1$, $\Xi_3$, $\Xi_5$ of the shapes of $M_1$, $M_3$, $M_5$, and we replace $M_t$ by the entrywise product $M'_t=M_t\circ\Xi_t$ for $t\in\{1,3,5\}$; we set $M'_2=M_2$ and $M'_4=M_4$.
+Following~\cite[Theorem~C.1]{vdBNS19full}, we place $M'_1,\dots,M'_5$ on the block superdiagonal of a block matrix $X$ whose diagonal blocks are identity matrices and whose other blocks are zero.
+Then $X$ is a $0/1$ matrix of dimension $m=O(s)$.
+It is upper unitriangular, hence invertible over every field.
+The block of $X^{-1}$ in the first block row and the last block column is $-P$, where $P=M'_1M'_2M'_3M'_4M'_5$ is computed in~$\F$.
+For a pair $(a,b)$, call a sequence $(i_1,i_2,i_3,i_4)$ of indices a \emph{path} if $(M_1)_{ai_1}(M_2)_{i_1i_2}(M_3)_{i_2i_3}(M_4)_{i_3i_4}(M_5)_{i_4b}=1$.
+Then $P_{ab}=\sum(\Xi_1)_{ai_1}(\Xi_3)_{i_2i_3}(\Xi_5)_{i_4b}$, summed over all paths, and distinct paths contribute distinct monomials in the entries of the masks.
+If entry $(a,b)$ of the Boolean product is~$0$, there is no path, and $P_{ab}=0$.
+Otherwise $P_{ab}$ is a nonzero multilinear polynomial of degree three in the entries of the masks, so $P_{ab}\ne0$ with probability at least $1/8$, by the argument in the proof of Lemma~\ref{lem:isolation}.
+
+Let $a'$ be the row of $X$ that corresponds to row $a$ of the first block, and let $b'$ be the column that corresponds to column $b$ of the last block.
+By Lemma~\ref{lem:bordered} with $Y=X$, $x=e_{a'}$, and $w=e_{b'}$,
+\[
+  \rk\begin{pmatrix}X&e_{b'}\\e_{a'}^{\top}&0\end{pmatrix}=m+\bigl[(X^{-1})_{a'b'}\neq0\bigr]=m+\bigl[P_{ab}\ne0\bigr].
+\]
+We run nine independent copies of this construction, each with its own masks and its own instance of~$\mathcal{R}$ on the bordered $0/1$ matrix of dimension $\ell=m+1$, whose border row and border column are initially zero.
+In preprocessing we flip the entries of each matrix $X$ into place; there are $O(s^2)$ of them, so this takes polynomial time.
+An element update of $M_2$ or $M_4$ is one flip in every copy.
+A query for entry $(a,b)$ sets, in every copy, the single nonzero entries of the border row and the border column, reads the rank, and resets them, which takes four flips; we answer~$1$ if and only if some copy reports rank $m+1$.
+If entry $(a,b)$ of the Boolean product is~$0$, this answer is wrong only if some copy of $\mathcal{R}$ errs; otherwise it is wrong only if all nine masks fail or some copy of $\mathcal{R}$ errs.
+So the error probability is at most $(7/8)^9+9/1000<1/3$.
+The problem is thus solved with polynomial preprocessing, worst-case time $O(\ell^{\alpha-\eps})=O(s^{\alpha-\eps})$ per update and per query, and error probability less than $1/3$; by the proof of the five-matrix bound, this contradicts the \uMv-hinted \uMv\ conjecture.
+\end{proof}
+
+Van den Brand, Nanongkai, and Saranurak also state a lower bound for dynamic rank directly~\cite[Corollary~5.15]{vdBNS19full}.
+Their rank instances, however, come from a reduction through bipartite matching that substitutes random elements of a large field for the entries, so they are not $0/1$ matrices, and our gadget encodes only matrices with entries in $\{0,\pm1\}$ (Theorem~\ref{thm:equiv}).
+This is why we go back to the five-matrix product, whose block matrix~$X$ has $0/1$ entries.
+Over a field of characteristic zero the masks are not needed, because $P_{ab}$ for $\Xi_1,\Xi_3,\Xi_5$ all-ones counts the paths, so that reduction is deterministic; in positive characteristic the number of paths can vanish, and the masks repair this.
+Corollary~\ref{cor:upper} below gives the randomized worst-case upper bound $O(n^{1.407})$.
+With the current bounds on matrix multiplication, the exponents $\alpha/2\approx0.7035$ and $\alpha\approx1.407$ differ by exactly the factor two incurred by encoding a dense $\ell\times\ell$ matrix with $\Theta(\ell^2)$ simplices.
+
+In the other direction, dynamic-rank algorithms yield dynamic-Betti algorithms.
+
+\begin{corollary}\label{cor:upper}
+Let $\F$ be a field and let $p\ge0$ be an integer.
+There is a randomized (Monte Carlo) data structure for dynamic $\beta_p$ over $\F$ that, for every fixed operation sequence of polynomial length, answers all queries correctly with high probability, with preprocessing time polynomial in~$n$, worst-case update time $O(n^{1.407})$, and query time $O(1)$, where operations in $\F$, or, if $\F$ is small, in an extension field of~$\F$ of size $n^{c}$ for a large enough constant~$c$, count as unit cost.
+\end{corollary}
+
+\begin{proof}
+The block matrix of Lemma~\ref{lem:betti-to-rank} has at most $n$ rows and at most $n$ columns, and a simplex update changes at most $p+2$ of its entries (Theorem~\ref{thm:equiv}(i)).
+Van den Brand, Nanongkai, and Saranurak~\cite{vdBNS19} maintain the rank of an $\ell\times\ell$ matrix under entry updates in $O(\ell^{1.407})$ worst-case time per update, with a randomized (Monte Carlo) algorithm that obtains the rank from a dynamic determinant through a reduction of Sankowski~\cite{San07}; over a small field the algorithm works in an extension field; a field of size $n^{c}$, for a large enough constant~$c$, makes the error probability of every query polynomially small, so that all answers of a polynomially long operation sequence are correct with high probability.
+We run it on the block matrix, padded with zero rows and columns to size $n\times n$, and keep a counter for $n_p(K)$.
+Over $\mathbb{Q}$, the unit-cost assumption can be removed: the block matrix has entries in $\{0,\pm1\}$, so by Hadamard's inequality each of its nonzero minors has absolute value at most $n^{n/2}$ and hence at most $O(n\log n)$ prime divisors.
+For a prime $q$ drawn uniformly from the primes with $c\log n$ bits, for a large enough constant~$c$, the rank modulo $q$ therefore equals the rank over $\mathbb{Q}$ for all of the polynomially many matrices of a fixed operation sequence, with high probability, and arithmetic modulo $q$ takes constant time on a word RAM with words of $O(\log n)$ bits.
+\end{proof}
+
+For fully dynamic $\beta_p$, $p\ge1$, the best upper bound that we know is thus the randomized $O(n^{1.407})$ worst-case bound of Corollary~\ref{cor:upper}.
+Our lower bounds are $n^{1/2-o(1)}$ for amortized, and hence also for worst-case, update time from the \OMv\ conjecture, for every data structure with query time $O(n^{1-\eps})$ (Theorem~\ref{thm:omv}), and $n^{\alpha/2-o(1)}$, with $\alpha/2\ge5/8$ and $\alpha/2\approx0.703$ for the current bounds on matrix multiplication, for worst-case update or query time over every field from the \uMv-hinted \uMv\ conjecture (Corollary~\ref{cor:hinted}).
+Over $\Ftwo$, Theorem~\ref{thm:equiv} shows that closing the gap is equivalent to closing the corresponding gap for dynamic rank, with time measured in the instance size $N=r+k+m$ of Problem~\ref{prob:rank}.
+
+\subsection{Bounded degree}\label{sec:lower-bdeg}
+
+In the universe $\cU([\ell]\times[\ell])$, every row cycle $C_i$ meets the tubes of $\ell$ sockets, so its vertices lie in $\Theta(\ell)$ simplices.
+We now replace each row cycle by a chain of copies, one for every column (Figure~\ref{fig:bdeg}).
+The proof of Lemma~\ref{lem:crux} carries over by a telescoping argument.
+We call the triangle cycles $s^j_0,\dots,s^j_{\ell+1}$ of column $j$ in Definition~\ref{def:gadget} the \emph{running cycles} of column~$j$; consecutive running cycles are joined by a socket.
+
+\begin{definition}[Bounded-degree gadget]\label{def:bdeg}
+Let $\ell\ge1$.
+The universe $\cU^{\flat}=\cU^{\flat}(\ell)$ is obtained from $\cU([\ell]\times[\ell])$ of Definition~\ref{def:gadget} by the following changes; all new vertices are distinct.
+\begin{itemize}
+\item Each row cycle $C_i$ is replaced by $\ell$ triangle cycles $C_i^1,\dots,C_i^{\ell}$, the \emph{copies} of~$C_i$, and $D_i$ is the filling of~$C_i^1$.
+\item For every $(i,j)\in[\ell]\times[\ell]$, the tube of the socket of position $(i,j)$ is the tube to $C_i^j$ instead of~$C_i$.
+\item For every $i\in[\ell]$ and $j\in[\ell-1]$, the annulus $Q_i^j=\mathrm{Cyl}(C_i^j,C_i^{j+1})$ is added, together with its vertices and edges.
+\end{itemize}
+For $A\in\{0,1\}^{\ell\times\ell}$ and $R,J\subseteq[\ell]$, the complex $K^{\flat}(A;R,J)\subseteq\cU^{\flat}$ consists of all vertices and edges of~$\cU^{\flat}$, the cones, the punctured cylinders, the tubes to the tethers, all annuli $Q_i^j$, the seal of the socket of $(i,j)$ if $A_{ij}=0$ and its tube to $C_i^j$ if $A_{ij}=1$, the filling $D_i$ for every $i\notin R$, and the filling $E_j$ for every $j\in J$.
+\end{definition}
+
+\input{figures/fig-bdeg}
+
+\begin{lemma}\label{lem:bdeg-crux}
+Let $\F$ be a field, let $\ell\ge1$, let $A\in\{0,1\}^{\ell\times\ell}$, and let $R,J\subseteq[\ell]$.
+Then
+\[
+  \beta_2\bigl(K^{\flat}(A;R,J);\F\bigr)=|J|-\rk_{\F}A[R,J].
+\]
+\end{lemma}
+
+\begin{proof}
+Let $K=K^{\flat}(A;R,J)$, and let $\Sigma_j$ be the set of triangles of $K$ that belong to column~$j$, that is, its cones, punctured cylinders, seals, and tubes.
+
+\emph{Incidences.}
+Call a vertex \emph{private} to column~$j$ if it lies on a running cycle $s^j_t$ or on the tether~$\Lambda_j$, or if it is the apex of a cone of column~$j$.
+As in the proof of Lemma~\ref{lem:surface}, $\Sigma_j$ is a connected triangulated surface whose boundary is the disjoint union of $\Lambda_j$ and the copies $C_i^j$ with $A_{ij}=1$.
+As there, every edge of $K$ that has an endpoint private to column $j$ and does not lie on $\Lambda_j$ lies in no triangle of $K$ or in exactly two triangles of~$K$, both in~$\Sigma_j$.
+Every other edge of $K$ lies on a tether or joins two vertices of copies.
+An edge that joins two vertices of copies but does not lie on a copy joins $C_i^j$ and $C_i^{j+1}$ for some $i$ and~$j$, because only the annuli contain such edges, and it lies in exactly two triangles of~$K$, both in~$Q_i^j$.
+Every triangle of $K$ lies in some $\Sigma_j$ or in some $Q_i^j$, or it is a filling $D_i$ with $i\notin R$ or $E_j$ with $j\in J$.
+
+\emph{Orientations.}
+We orient all triangles as in Section~\ref{sec:crux}, and we orient each annulus $Q_i^j$ like every cylinder there.
+The computation in Section~\ref{sec:crux} does not depend on the cycles to which the tubes lead.
+It therefore yields a coherently oriented chain $[\Sigma_j]$ with $\bd[\Sigma_j]=[\Lambda_j]+\sum_{i:\,A_{ij}=1}[C_i^j]$, and a coherently oriented chain $[Q_i^j]$ with $\bd[Q_i^j]=[C_i^j]-[C_i^{j+1}]$.
+We orient the fillings so that $\bd D_i=[C_i^1]$ and $\bd E_j=[\Lambda_j]$.
+
+\emph{Cycles.}
+Let $z$ be a $2$-cycle of~$K$.
+If an edge lies in exactly two triangles $t,t'$ of $K$, both in $\Sigma_j$ or both in $Q_i^j$, then $t$ and $t'$ induce opposite orientations on it, so its coefficient in $\bd z$ is, up to sign, the difference of the coefficients of $t$ and $t'$ in~$z$; hence these coefficients agree.
+The surface $\Sigma_j$ is connected through such edges, by the last claim of Lemma~\ref{lem:surface}, and so is $Q_i^j$, whose six triangles form a cyclic sequence in which consecutive triangles share an edge between $C_i^j$ and~$C_i^{j+1}$.
+Therefore
+\[
+  z=\sum_{j\in[\ell]}x_j[\Sigma_j]+\sum_{i\in[\ell]}\sum_{j\in[\ell-1]}y_{ij}[Q_i^j]+\sum_{i\notin R}a_iD_i+\sum_{j\in J}b_jE_j
+\]
+for some scalars $x_j,y_{ij},a_i,b_j\in\F$.
+We set $a_i=0$ for $i\in R$, $b_j=0$ for $j\notin J$, and $y_{i0}=y_{i\ell}=0$ for all~$i$.
+Then
+\begin{align*}
+  \bd z={}&\sum_{j\in[\ell]}(x_j+b_j)\,[\Lambda_j]+\sum_{i\in[\ell]}\bigl(A_{i1}x_1+y_{i1}+a_i\bigr)\,[C_i^1]\\
+  &+\sum_{i\in[\ell]}\sum_{j=2}^{\ell}\bigl(A_{ij}x_j+y_{ij}-y_{i,j-1}\bigr)\,[C_i^j].
+\end{align*}
+The copies and the tethers have pairwise disjoint edge sets, so $\bd z=0$ holds if and only if all coefficients vanish.
+
+\emph{Solving.}
+The coefficients of the tethers vanish if and only if $x_j=0$ for $j\notin J$ and $b_j=-x_j$ for $j\in J$.
+Fix a row~$i$.
+The sum of the coefficients of $C_i^1,\dots,C_i^{\ell}$ is $\sum_{j}A_{ij}x_j+a_i$, because the terms $y_{ij}$ cancel.
+So if all coefficients vanish, then $\sum_{j\in J}A_{ij}x_j=0$ for $i\in R$, and $a_i=-\sum_{j}A_{ij}x_j$ for $i\notin R$.
+Moreover, $y_{ij}=-a_i-\sum_{j'\le j}A_{ij'}x_{j'}$ for $j\in[\ell-1]$.
+Conversely, let $x\in\F^{\ell}$ satisfy $x_j=0$ for $j\notin J$ and $\sum_{j\in J}A_{ij}x_j=0$ for $i\in R$.
+If we define $a_i$, $b_j$, and $y_{ij}$ by these formulas, then the coefficients of $\Lambda_j$ and of $C_i^1,\dots,C_i^{\ell-1}$ vanish by construction, and the coefficient of $C_i^{\ell}$ vanishes because the sum of all coefficients of row $i$ is $\sum_{j}A_{ij}x_j+a_i=0$.
+Hence $z\mapsto(x_j)_{j\in J}$ is a linear bijection from $Z_2(K)$ onto the kernel of $A[R,J]$.
+Since $\dim K=2$, we get $\beta_2(K)=\dim Z_2(K)=|J|-\rk_{\F}A[R,J]$.
+\end{proof}
+
+\begin{theorem}\label{thm:bdeg}\label{thm:bounded-degree}
+Let $\F$ be a field, let $p\in\{1,2\}$, and let $\eps>0$.
+Let $\mathcal{B}$ be the class of $2$-dimensional universes in which every vertex lies in at most $37$ simplices and every edge lies in at most three triangles.
+If the \OMv\ conjecture holds, then the following statements hold for universes in~$\mathcal{B}$.
+\begin{enumerate}[label=(\roman*)]
+\item No data structure for dynamic $\beta_p$ over $\F$ has polynomial preprocessing time, amortized update time $O(n^{1/2-\eps})$, and query time $O(n^{1-\eps})$.
+\item No data structure for incremental dynamic $\beta_p$ over~$\F$, and no data structure for decremental dynamic $\beta_p$ over~$\F$, has polynomial preprocessing time, worst-case update time $O(n^{1/2-\eps})$, and query time $O(n^{1-\eps})$.
+\item No data structure for Problem~\ref{prob:sublevel} over $\F$ has polynomial preprocessing time, amortized update time $O(n^{1/2-\eps})$, and query time $O(n^{1-\eps})$.
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}
+For $\ell\ge1$ and $M\in\{0,1\}^{\ell\times\ell}$, the universe $\cU^{\flat}(\ell)$ together with the complexes $K_{R,J}=K^{\flat}(M;R,J)$ is an encoding of $M$ over~$\F$.
+Indeed, \ref{enc:skeleton} holds by Definition~\ref{def:bdeg}, \ref{enc:rank} is Lemma~\ref{lem:bdeg-crux}, and \ref{enc:switch} holds with the fillings $D_i$ and $E_j$, as in $\cU([\ell]\times[\ell])$.
+The universe $\cU^{\flat}(\ell)$ has $\Theta(\ell^2)$ simplices, since each position $(i,j)$ contributes one socket, one copy, and at most one annulus, each of constant size, and it can be constructed in time $O(\ell^2)$.
+The proofs of Theorem~\ref{thm:omv} and of Theorem~\ref{thm:partial} for $p\in\{1,2\}$ use only these properties, so they apply to these encodings and prove (i) and~(ii) for the universes $\cU^{\flat}(\ell)$.
+Part~(iii) follows from~(i) and Lemma~\ref{lem:sublevel}, which does not change the universe.
+It remains to show that $\cU^{\flat}(\ell)\in\mathcal{B}$.
+
+\emph{Triangles at a vertex.}
+A vertex of a running cycle $s^j_t$ lies in at most three triangles of each of the at most two cylinders or cones that contain $s^j_t$, where a seal counts as a triangle of its cylinder.
+It also lies in three triangles of each of the at most two tubes whose hole contains it.
+A vertex of a copy $C_i^j$ lies in three triangles of the tube to $C_i^j$, in three triangles of each of the at most two annuli $Q_i^{j-1}$ and $Q_i^j$, and possibly in~$D_i$.
+A vertex of a tether lies in three triangles of its tube and in its filling, and the apex of a cone lies in three triangles.
+So every vertex lies in at most $12$ triangles.
+Every edge of $\cU^{\flat}(\ell)$ lies in a triangle, so a vertex in $t$ triangles lies in at most $2t$ edges.
+Hence every vertex lies in at most $1+24+12=37$ simplices.
+
+\emph{Triangles at an edge.}
+An edge of a running cycle lies in at most one triangle of each of the two cylinders or cones that contain the cycle and, if it is an edge of a hole, in one triangle of the tube of that hole.
+An edge that joins two consecutive running cycles lies in at most two triangles of their cylinder and, if it is an edge of a hole, in one triangle of the tube.
+An edge of a copy $C_i^j$ lies in one triangle of the tube to $C_i^j$, in one triangle of each annulus $Q_i^{j-1}$ and $Q_i^j$ that exists, and, if $j=1$, in~$D_i$; since $Q_i^0$ does not exist, these are at most three triangles.
+An edge of a tether lies in one triangle of its tube and in its filling.
+Every remaining edge joins the apex of a cone to its base, or a hole to the cycle at the far end of its tube, or two consecutive copies, and lies in exactly two triangles.
+So every edge lies in at most three triangles.
+\end{proof}
+
+Entry flips are also local in $\cU^{\flat}(\ell)$: flipping $A_{ij}$ exchanges the seal of the socket of position $(i,j)$ with its tube to $C_i^j$, which takes a constant number of triangle updates, and Lemma~\ref{lem:bdeg-crux} holds for every matrix~$A$.
+Hence the reduction in the proof of Theorem~\ref{thm:equiv}(ii), with Lemma~\ref{lem:bdeg-crux} in place of Lemma~\ref{lem:crux}, also works on the universes $\cU^{\flat}(\ell)$, and so does the proof of Theorem~\ref{thm:worstcase} for $p\in\{1,2\}$.
+Since the boundary matrices of these universes are sparse, the bounds also transfer back to dynamic rank of sparse matrices.
+
+\begin{corollary}\label{cor:bdeg-allp}
+For every fixed $p\ge3$, the bounds of Theorem~\ref{thm:omv} hold for dynamic $\beta_p$ over every field~$\F$ on universes of dimension $p$ in which every vertex lies in at most $\kappa_p$ simplices, where $\kappa_p$ depends only on~$p$.
+\end{corollary}
+
+\begin{proof}
+Suspension does not preserve bounded degree, because each of its two apexes lies in $\Theta(n)$ simplices.
+We use a product with a sphere instead.
+Let $S=\bd\Delta^{p-1}$ be the boundary of a $(p-1)$-simplex, a triangulated $(p-2)$-sphere with a constant number of simplices.
+Fix a total order on the vertices of the bounded-degree universe $\cU^{\flat}$ of Theorem~\ref{thm:bdeg} and on the vertices of~$S$, and let $\cU^{\flat}\times S$ be the standard (staircase) triangulation of the product of the two ordered complexes~\cite{Mun84}.
+Its simplices are the chains of the product of the two vertex orders whose projections to the factors are simplices.
+Restricted to the simplices whose first projection lies in a subcomplex $K\subseteq\cU^{\flat}$, it is a triangulation of $\lVert K\rVert\times\lVert S\rVert$, which we denote $K\times S$.
+Every vertex of $\cU^{\flat}\times S$ lies in a number of simplices bounded in terms of $p$ and the maximum number of simplices at a vertex of~$\cU^{\flat}$, and a simplex update of $K$ corresponds to inserting or deleting the boundedly many simplices of $K\times S$ that project onto it, in order of increasing dimension for insertions and decreasing dimension for deletions.
+By the K\"unneth formula over a field~\cite[Section~3.B]{Hat02}, $H_p(K\times S)\cong\bigoplus_{i+j=p}H_i(K)\otimes H_j(S)$.
+Since $\dim K=2<p$ and $H_j(S)\ne0$ only for $j\in\{0,p-2\}$, we get $\beta_p(K\times S)=\beta_2(K)\,\beta_{p-2}(S)=\beta_2(K)$.
+So the reduction of Theorem~\ref{thm:bdeg} carries over with a constant factor more updates and a constant factor larger universe.
+\end{proof}
+
+\begin{corollary}\label{cor:sparse-rank}
+Let $\F$ be a field and let $\eps>0$.
+If the \OMv\ conjecture holds, then no data structure for Problem~\ref{prob:rank} over $\F$ has polynomial preprocessing time, amortized update time $O(N^{1/2-\eps})$, and query time $O(N^{1-\eps})$, where $N$ is the instance size.
+This holds even for instances in which every row and every column contains at most three admissible positions, and for operation sequences without switches in which every entry update $\Set(i,j,x)$ has $x\in\{-1,0,1\}$.
+\end{corollary}
+
+\begin{proof}
+Suppose that $\mathcal{D}$ is such a data structure.
+We build a data structure for dynamic $\beta_2$ over $\F$ on the universes $\cU^{\flat}(\ell)$.
+Let $B$ be the boundary matrix of $\cU^{\flat}(\ell)$ in dimension~$2$, with rows indexed by the edges and columns indexed by the triangles, for the orientations used in Lemma~\ref{lem:bdeg-crux}.
+Its entries lie in $\{-1,0,1\}$.
+Every column of $B$ has three nonzero entries, and every row has at most three, as shown in the proof of Theorem~\ref{thm:bdeg}.
+The rank instance has $r=n_1(\cU^{\flat})$ rows, $k=n_2(\cU^{\flat})$ columns, and the admissible set $P=\supp(B)$, so its size is $N=O(n)$.
+We use no switches, so all rows and columns stay active, and a rank query returns the rank of the whole matrix.
+We maintain the matrix $B^K$ obtained from $B$ by replacing the columns of the triangles not in $K$ with zero columns.
+Initially $K=\emptyset$ and $B^K=0$.
+Inserting a triangle sets the three entries of its column to their values in~$B$, deleting a triangle sets them to~$0$, and inserting or deleting a vertex or an edge does not change~$B^K$.
+Since $\cU^{\flat}$ has no $3$-simplices, Lemma~\ref{lem:betti-to-rank} gives $\beta_2(K)=n_2(K)-\rk B^K$, so a query is answered with one rank query and a counter for $n_2(K)$.
+The resulting data structure has polynomial preprocessing time, amortized update time $O(n^{1/2-\eps})$, and query time $O(n^{1-\eps})$.
+By the proof of Theorem~\ref{thm:bdeg}(i), no such data structure exists on the universes $\cU^{\flat}(\ell)$.
+\end{proof}
+
+Corollary~\ref{cor:sparse-rank} also follows without topology.
+Replace the equation of row~$i$ by the chain $y_{i,j}-y_{i,j-1}-A_{ij}x^{(i)}_j=0$ for $j\in[\ell]$, with $y_{i,0}=0$, tie the copies of each column by $x^{(i)}_j-x^{(i-1)}_j=0$, and realize the row switch of~$i$ by the single-entry row $y_{i,\ell}=0$ and the column switch of~$j$ by the single-entry row $x^{(1)}_j=0$.
+Every row and every column then has at most three nonzero entries, all in $\{0,\pm1\}$, the kernel is isomorphic to that of $A[R,J]$, and every operation changes $O(1)$ entries; together with Lemma~\ref{lem:rank-omv}, this proves Corollary~\ref{cor:sparse-rank}.
+The gadget of Definition~\ref{def:bdeg} yields, in addition, the bounded-degree complexes of Theorem~\ref{thm:bdeg}.
+
+Three admissible positions per row and column is the smallest number for which Corollary~\ref{cor:sparse-rank} can hold.
+Statically, Edelsbrunner and Parsa~\cite[Theorem~4.1]{EP14}, in a special case of a sparsification of Yuster~\cite{Yus08}, reduce the rank of a $0/1$ matrix to the rank of a $0/1$ matrix with at most three nonzero entries in every row and every column, by applying their construction twice; Corollary~\ref{cor:sparse-rank} is a dynamic counterpart, and two admissible positions per column already make the problem easy.
+They also remark that their complexes, in which every edge lies in at most three triangles, are already as hard as sparse rank~\cite[remark after Theorem~4.1]{EP14}, the static analogue of the class~$\mathcal{B}$ of Theorem~\ref{thm:bdeg}.
+
+\begin{proposition}\label{rem:threshold}
+Let $\F$ be a field. If every column, or every row, has at most two admissible positions, then Problem~\ref{prob:rank} over $\F$ restricted to entries in $\{-1,0,1\}$ can be solved with $O(\log^2N)$ amortized time per operation.
+\end{proposition}
+
+\begin{proof}
+Let $c(\cdot)$ denote the number of connected components of a graph.
+First suppose that every column has at most two admissible positions.
+Let $\Gamma$ be the multigraph on the row set $[r]$ with an edge between the two nonzero rows of every active column that has two nonzero entries, a half-edge at the nonzero row of every active column that has one, and a half-edge at every inactive row.
+Call an edge \emph{positive} if its two entries have opposite signs or $\F$ has characteristic~$2$, and \emph{negative} otherwise.
+Then $\rk A[R,J]=\rk\bigl(A[[r],J]\;\big|\;I_{[r]\setminus R}\bigr)-(r-|R|)$, and the left kernel of the matrix on the right consists of the vectors $y\in\F^r$ with $y_i=y_{i'}$ on positive edges, $y_i=-y_{i'}$ on negative edges, and $y_i=0$ at half-edges.
+Its dimension is the number of \emph{balanced} components of~$\Gamma$, those without half-edges in which every cycle has an even number of negative edges.
+In the double cover $\widetilde\Gamma$, with nodes $i^{+},i^{-}$, where a positive edge $ii'$ lifts to $i^{+}i'^{+}$ and $i^{-}i'^{-}$, a negative edge to $i^{+}i'^{-}$ and $i^{-}i'^{+}$, and a half-edge at $i$ to $i^{+}i^{-}$, a component of $\Gamma$ lifts to two components if it is balanced and to one otherwise.
+Hence $\rk A[R,J]=|R|-c(\widetilde\Gamma)+c(\Gamma)$.
+Every operation of Problem~\ref{prob:rank} changes $O(1)$ edges of $\Gamma$ and~$\widetilde\Gamma$, so dynamic connectivity~\cite{HDT01} maintains the rank in $O(\log^2N)$ amortized time per operation; since $\rk A=\rk A^{\top}$, the same holds if every row has at most two admissible positions.
+\end{proof}
+
+This is the matrix counterpart of the contrast between $\beta_1$ of graphs, whose boundary matrices have two nonzero entries per column, and $\beta_1$ of $2$-complexes.
+
+Over $\Ftwo$, the matrices in Corollary~\ref{cor:sparse-rank} are $0/1$ matrices.
+
+
+\subsection{Universes embedded in \texorpdfstring{$\R^4$}{R4}}\label{sec:lower-r4}\label{sec:easy-r4}
+
+Edelsbrunner and Parsa~\cite{EP14} observed that their static reduction produces $2$-complexes that embed in~$\R^4$, whereas Betti numbers of complexes in~$\R^3$ can be computed in near-linear time~\cite{DE95,DG98}.
+We show that the dynamic lower bound also holds in~$\R^4$: the universes $\cU(P)$ of Definition~\ref{def:gadget} have linear embeddings in~$\R^4$, with all row cycles in a common $2$-plane and each column surface in its own \emph{page}, a closed half of a $3$-dimensional affine subspace bounded by that plane (Figure~\ref{fig:openbook}).
+Section~\ref{sec:easy-s3} shows that no such lower bound can hold in~$\R^3$.
+This open-book layout is that of Edelsbrunner and Parsa~\cite[Section~3]{EP14}, who place the cycles of their complex in a $2$-plane of~$\R^4$ and every punctured sphere in its own $3$-dimensional subspace, taken from a pencil of subspaces through that plane.
+What is new here is that each page carries a column surface assembled from sockets, with both attachments of every socket, the tether, and its filling, at explicit rational coordinates.
+
+A \emph{geometric simplex} in $\R^d$ is the convex hull of a set of affinely independent points, its \emph{vertices}; its \emph{faces} are the convex hulls of the subsets of its vertices, including the empty face.
+A \emph{geometric simplicial complex} in $\R^d$ is a finite set $X$ of geometric simplices that contains all faces of its members and in which any two simplices intersect in a common face.
+Its underlying space $\lVert X\rVert$ is the union of its simplices.
+A \emph{linear embedding} of a simplicial complex $K$ in $\R^d$ is an injective map $f$ from the vertices of $K$ to $\R^d$ such that, for every $\sigma\in K$, the points $f(\sigma)$ are affinely independent, and the simplices $\operatorname{conv}f(\sigma)$, $\sigma\in K$, form a geometric simplicial complex.
+For two geometric simplicial complexes $X$ and $Y$, the set $X\cap Y$ of their common simplices is a geometric simplicial complex.
+
+\begin{lemma}[Gluing]\label{lem:glue}
+Let $X$ and $Y$ be geometric simplicial complexes in $\R^d$ such that
+\[\lVert X\rVert\cap\lVert Y\rVert=\lVert X\cap Y\rVert.\]
+Then $X\cup Y$ is a geometric simplicial complex.
+\end{lemma}
+
+\begin{proof}
+The set $X\cup Y$ contains all faces of its members.
+Let $\sigma\in X$ and $\tau\in Y$.
+Since $\sigma\cap\tau\subseteq\lVert X\rVert\cap\lVert Y\rVert=\lVert X\cap Y\rVert$, every point of $\sigma\cap\tau$ lies in some $\rho\in X\cap Y$.
+For such~$\rho$, the set $\sigma\cap\rho$ is a common face of $\sigma$ and~$\rho$, because both lie in~$X$, and $\tau\cap\rho$ is a common face of $\tau$ and $\rho$, because both lie in~$Y$.
+Both are faces of~$\rho$, so both lie in $X\cap Y$, and their intersection $\sigma\cap\tau\cap\rho$ is a common face of the two.
+Hence $\sigma\cap\tau\cap\rho$ is a face of $\sigma$ and a face of~$\tau$.
+So $\sigma\cap\tau$ is a union of common faces of $\sigma$ and $\tau$.
+Let $V$ be the set of vertices of these faces.
+Then $\sigma\cap\tau\subseteq\operatorname{conv}V$, and $\operatorname{conv}V\subseteq\sigma\cap\tau$ because $\sigma\cap\tau$ is convex and contains~$V$.
+So $\sigma\cap\tau=\operatorname{conv}V$, which is a common face of $\sigma$ and~$\tau$, because $V$ consists of common vertices.
+\end{proof}
+
+\paragraph{One column.}
+Fix $P\subseteq[r]\times[k]$ and a column $j\in[k]$, and let $i_1<\dots<i_d$ be the elements of $S_j$, where $d=d_j$.
+We place the simplices of $\cU(P)$ that belong to column~$j$ in $\R^3$, with coordinates $(x,y,z)$.
+We write the vertices of the triangle cycle $s^j_t$ as $s_{t,0},s_{t,1},s_{t,2}$, and the vertices of a triangle cycle $C$ as $C_{(0)},C_{(1)},C_{(2)}$.
+Let $\delta_0=(0,1)$, $\delta_1=(1,1)$, $\delta_2=(\frac12,2)$, and $\eta_0=(0,0)$, $\eta_1=(0,1)$, $\eta_2=(1,0)$.
+For $t\in\{0,\dots,d+1\}$ and $u\in\Z_3$, we place
+\[
+  s_{t,u}=(t,\delta_u),\qquad (\Lambda_j)_{(u)}=\bigl(\tfrac12\eta_u,\tfrac12\bigr),\qquad (C_i)_{(u)}=\bigl((i,0)+\tfrac12\eta_u,\,0\bigr)\ \ (i\in[r]),
+\]
+and the apexes of the cones on $s^j_0$ and on $s^j_{d+1}$ at $(-1,\frac12,\frac32)$ and $(d+2,\frac12,\frac32)$.
+For $0\le t\le d$, the hole of the socket between $s^j_t$ and $s^j_{t+1}$ is the triangle cycle $h_t=(s_{t,0},s_{t,1},s_{t+1,0})$, and its vertices are the points $((t,0)+\eta_u,1)$, $u\in\Z_3$.
+Let $W$ be the set of the following geometric simplices and all their faces: the six triangles of $\mathrm{Cyl}(s^j_t,s^j_{t+1})$ for $0\le t\le d$, the two cones, the tube $\mathrm{Cyl}(h_0,\Lambda_j)$, the tubes $\mathrm{Cyl}(h_t,C_{i_t})$ for $t\in[d]$, and the filling $E_j$ of~$\Lambda_j$.
+Apart from the seal of $h_0$, which is not in $\cU(P)$, these are exactly the simplices of $\cU(P)$ that contain a vertex of column~$j$, together with all their faces.
+
+\begin{lemma}\label{lem:column}
+The set $W$ is a geometric simplicial complex in the half-space $\{z\ge0\}$, and $\lVert W\rVert\cap{\{z=0\}}=\bigcup_{t\in[d]}\lVert C_{i_t}\rVert$.
+\end{lemma}
+
+\begin{proof}
+We assemble $W$ from three parts with Lemma~\ref{lem:glue}.
+
+\emph{The cylinders and cones.}
+Let $\Delta\subset\R^2$ be the triangle with vertices $\delta_0,\delta_1,\delta_2$, write $[\delta_u,\delta_{u+1}]$ for the segment between $\delta_u$ and $\delta_{u+1}$, and let $R_u=[0,d+1]\times[\delta_u,\delta_{u+1}]$, $u\in\Z_3$, be the lateral faces of the prism $[0,d+1]\times\Delta$.
+The triangles $s_{t,u}s_{t,u+1}s_{t+1,u}$ and $s_{t,u+1}s_{t+1,u}s_{t+1,u+1}$ of the cylinders cut the rectangle $[t,t+1]\times[\delta_u,\delta_{u+1}]$ along a diagonal.
+So, for fixed~$u$, the cylinder triangles in $R_u$ triangulate~$R_u$.
+Two distinct faces $R_u$ meet in a segment $[0,d+1]\times\{\delta\}$, where $\delta$ is a common vertex of their edges of $\Delta$, and both triangulations subdivide this segment at the integer points.
+By Lemma~\ref{lem:glue}, applied twice, the cylinder triangles and their faces form a geometric simplicial complex~$Y_0$.
+The cone on $s^j_0$ consists of three facets of the tetrahedron spanned by $(-1,\frac12,\frac32)$ and $s^j_0$, so it is a geometric simplicial complex.
+It lies in $\{x\le0\}$, the complex $Y_0$ lies in $\{x\ge0\}$, and both meet the plane $\{x=0\}$ exactly in the boundary of the triangle spanned by~$s^j_0$.
+By Lemma~\ref{lem:glue}, and by the symmetric argument for the cone on $s^j_{d+1}$, the cylinders and the cones form a geometric simplicial complex~$Y$.
+It lies in $\{1\le z\le 2\}$, and the edges of every hole $h_t$ belong to~$Y$.
+
+\emph{The tubes.}
+Let $\Delta'$ be the triangle with vertices $\eta_0,\eta_1,\eta_2$; its projection to the $x$-axis is $[0,1]$.
+For $t\in[d]$ let $F_t$ be the convex hull of $h_t$ and $C_{i_t}$.
+Its bottom face, spanned by $C_{i_t}$, is a copy of its top face, spanned by $h_t$, scaled by $\frac12$ and translated, with the vertices $(h_t)_{(u)}$ and $(C_{i_t})_{(u)}$ corresponding.
+So $F_t$ is a frustum of a triangular pyramid.
+Its lateral facets are the three trapezoids spanned by $(h_t)_{(u)},(h_t)_{(u+1)},(C_{i_t})_{(u+1)},(C_{i_t})_{(u)}$, and two of them meet exactly in a common lateral edge.
+The six triangles of $\mathrm{Cyl}(h_t,C_{i_t})$ are obtained by cutting each trapezoid along its diagonal from $(h_t)_{(u+1)}$ to $(C_{i_t})_{(u)}$, so they form a geometric simplicial complex.
+A point of $F_t$ at height $z\in[0,1]$ is a convex combination $zp+(1-z)q$ with $p$ in the top face and $q$ in the bottom face, so the horizontal section of $F_t$ at height $z$ is
+\begin{equation}\label{eq:section}
+  \tfrac{1+z}{2}\,\Delta'+\bigl(x_t(z),0\bigr),\qquad\text{where } x_t(z)=zt+(1-z)\,i_t.
+\end{equation}
+In the same way, the convex hull $F_0$ of $h_0$ and $\Lambda_j$ is a frustum whose section at height $z\in[\frac12,1]$ is $z\Delta'$, and $\mathrm{Cyl}(h_0,\Lambda_j)$ is a geometric simplicial complex.
+
+\emph{The tubes meet only at shared vertices of holes.}
+For $z<1$ the section~\eqref{eq:section} projects to the $x$-interval $[x_t(z),x_t(z)+\frac{1+z}{2}]$, whose length is less than one.
+For $1\le t<t'\le d$ we have $t'-t\ge1$ and $i_{t'}-i_t\ge1$, so $x_{t'}(z)-x_t(z)=z(t'-t)+(1-z)(i_{t'}-i_t)\ge1$.
+Hence $F_t$ and $F_{t'}$ can meet only at height $z=1$, where they meet in $\operatorname{conv}h_t\cap\operatorname{conv}h_{t'}$.
+This is the point $s_{t+1,0}$ if $t'=t+1$, and empty otherwise.
+Similarly, the section of $F_0$ at height $z\in[\frac12,1)$ projects into $[0,z]$, while $x_t(z)\ge1$ for $t\ge1$.
+So $F_0$ meets $F_t$ only in the point $s_{1,0}$, and only if $t=1$.
+These points are common vertices of the tubes involved.
+By Lemma~\ref{lem:glue}, applied once for each tube, the tubes and their faces form a geometric simplicial complex~$Z$.
+
+\emph{Gluing.}
+The complex $Y$ lies in $\{z\ge1\}$, and $Z$ lies in $\{z\le1\}$.
+Each tube meets the plane $\{z=1\}$ exactly in the boundary of the triangle spanned by its hole, and the edges of this boundary belong to $Y$ and to~$Z$.
+So $\lVert Y\rVert\cap\lVert Z\rVert=\lVert Y\cap Z\rVert$, and $Y\cup Z$ is a geometric simplicial complex by Lemma~\ref{lem:glue}.
+The filling $E_j$ is the bottom face of $F_0$ at height~$\frac12$.
+It does not meet $Y$, it meets $\mathrm{Cyl}(h_0,\Lambda_j)$ exactly in $\lVert \Lambda_j\rVert$, and it does not meet $F_t$ for $t\ge1$, because $E_j$ projects into $[0,\frac12]$ while the section of $F_t$ at height $\frac12$ projects into $[1,\infty)$.
+A final application of Lemma~\ref{lem:glue} shows that $W$ is a geometric simplicial complex.
+All its vertices have $z\ge0$, so $W$ lies in $\{z\ge0\}$.
+Only the tubes $\mathrm{Cyl}(h_t,C_{i_t})$ with $t\in[d]$ reach height $0$, and they meet $\{z=0\}$ exactly in $\lVert C_{i_t}\rVert$.
+\end{proof}
+
+\input{figures/fig-openbook}
+
+\paragraph{The open book.}
+For $j\in[k]$ let $\varphi_j\colon\R^3\to\R^4$ be the linear map $\varphi_j(x,y,z)=(x,y,z,jz)$, and let $\Pi=\{(x,y,0,0):x,y\in\R\}$.
+Each $\varphi_j$ is injective and fixes the plane $\{z=0\}$ in the sense that $\varphi_j(x,y,0)=(x,y,0,0)$.
+If $j\ne j'$ and $\varphi_j(x,y,z)=\varphi_{j'}(x',y',z')$, then $x=x'$, $y=y'$, $z=z'$, and $jz=j'z$, so $z=0$.
+Hence the images of distinct maps $\varphi_j$ meet exactly in~$\Pi$.
+Figure~\ref{fig:openbook} shows the resulting embedding.
+
+
+\begin{theorem}\label{thm:r4}
+\leavevmode
+\begin{enumerate}[label=(\roman*)]
+\item For all $r,k\ge1$ and every $P\subseteq[r]\times[k]$, the complex $\cU(P)$ of Definition~\ref{def:gadget} has a linear embedding in $\R^4$ with rational coordinates, and such an embedding can be computed in ${O(r+k+|P|)}$ time.
+\item Assume the \OMv\ conjecture, and let $\F$ be a field, $p\in\{1,2\}$, and $\eps>0$.
+No data structure with polynomial preprocessing time solves Problem~\ref{prob:betti} for $\beta_p$ over $\F$ with amortized update time $O(n^{1/2-\eps})$ and query time $O(n^{1-\eps})$, even if the universe is a $2$-dimensional geometric simplicial complex in $\R^4$ that is given with the coordinates of its vertices.
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}
+(i)~For every column $j\in[k]$, let $W_j$ be the complex of Lemma~\ref{lem:column}, and let $W'_j$ be $W_j$ without the seal of $h_0$.
+Removing a triangle that is a face of no other simplex keeps a geometric simplicial complex, so $W'_j$ is one.
+Since $\varphi_j$ is linear and injective, $\varphi_j(W'_j)$ is a geometric simplicial complex in~$\R^4$.
+The position of a vertex of a row cycle does not depend on the column, because $\varphi_j(x,y,0)=(x,y,0,0)$ for every~$j$.
+We place the filling $D_i$ of $C_i$ in $\Pi$, for every $i\in[r]$.
+The triangles $D_i$ are pairwise disjoint, because $D_i$ projects to the $x$-interval $[i,i+\frac12]$.
+Let $X$ be the union of the complexes $\varphi_j(W'_j)$, $j\in[k]$, and of the triangles $D_i$, $i\in[r]$, with their faces.
+
+We show by Lemma~\ref{lem:glue} that $X$ is a geometric simplicial complex, adding one column at a time and then the triangles~$D_i$.
+By Lemma~\ref{lem:column}, the complex $\varphi_j(W'_j)$ meets $\Pi$ exactly in $\bigcup_{i\in S_j}\lVert C_i\rVert$.
+The images of distinct maps $\varphi_j$ meet only in~$\Pi$.
+So, for $j\ge2$, the union of the first $j-1$ columns meets $\varphi_j(W'_j)$ exactly in $\bigcup\lVert C_i\rVert$, over the rows $i\in S_j$ that also lie in $S_{j'}$ for some $j'<j$.
+This set is the underlying space of the common simplices, namely the vertices and edges of these row cycles.
+Likewise, the union of all columns meets the triangles $D_i$ exactly in the row cycles that occur in some column, and these consist of common simplices.
+So $X$ is a geometric simplicial complex.
+
+The vertex positions are injective: the vertices of column $j$ that are not on a row cycle have $z\ge\frac12$, so they are mapped into the image of $\varphi_j$ minus~$\Pi$, and distinct vertices of $W_j$ have distinct positions.
+The simplices of $X$ are the images of the simplices of $\cU(P)$: those that contain a vertex of column $j$ come from $W'_j$, and the remaining ones are the row cycles and their fillings.
+So the vertex positions form a linear embedding of $\cU(P)$.
+All coordinates are rational, and each is computed in $O(1)$ time; $\cU(P)$ has $O(r+k+|P|)$ simplices.
+
+(ii)~The proof of Theorem~\ref{thm:omv} uses only universes of the form $\cU([\ell]\times[\ell])$ (Lemma~\ref{lem:gadget-encoding}).
+By~(i), the coordinates of a linear embedding of such a universe in $\R^4$ can be computed during preprocessing, in linear time, and added to the instance.
+So the proof of Theorem~\ref{thm:omv} applies without change.
+\end{proof}
+
+\begin{corollary}\label{cor:r4-equiv}
+Let $\F$ be a field.
+Dynamic rank over $\F$ of $0/1$ matrices reduces with overhead $(7,1)$ to dynamic $\beta_1$, and to dynamic $\beta_2$, over $\F$ on $2$-complexes given with a linear embedding in~$\R^4$.
+Over $\Ftwo$, these problems are equivalent to dynamic rank with constant overhead.
+\end{corollary}
+
+\begin{proof}
+The reduction of Theorem~\ref{thm:equiv}(ii) uses the universe $\cU(P)$, and by Theorem~\ref{thm:r4}(i) its linear embedding can be computed in linear time and added to the instance.
+Conversely, dynamic $\beta_p$ on every universe, embedded or not, reduces to dynamic rank by Theorem~\ref{thm:equiv}(i), and over $\Ftwo$ every matrix is a $0/1$ matrix.
+\end{proof}
+Over other fields we do not know whether the universes $\cU^{\pm}(P)$ with reversed tubes, which encode $\{0,\pm1\}$-matrices, embed in~$\R^4$.
+
+
+\subsection{Clique complexes and Vietoris--Rips complexes}\label{sec:flag}
+
+Many complexes in topological data analysis are flag complexes, Vietoris--Rips complexes for example.
+The \emph{clique complex} $\Cl(G)$ of a graph $G$ has one simplex for every nonempty clique of~$G$.
+The \emph{Vietoris--Rips complex} $\VR_\varrho(X,\mathrm{dist})$ of a finite metric space $(X,\mathrm{dist})$ at scale $\varrho$ is the clique complex of the graph that joins two points at distance at most~$\varrho$; for a finite point set $X\subset\R^d$ with the Euclidean metric we write $\VR_\varrho(X)$.
+Such a complex is determined by its graph, so the natural updates insert or delete a vertex together with its incident edges, or insert or delete a point.
+One such update may add or remove many simplices at once.
+We show that the lower bounds survive in these models.
+
+\begin{problem}[Dynamic clique-complex Betti numbers]\label{prob:clique}
+Fix a field $\F$ and $p\ge0$.
+The instance is a graph $G=(V,E)$ with $n$ vertices.
+The data structure maintains a set $W\subseteq V$, initially empty, under insertion and deletion of single vertices, and on query returns $\beta_p(\Cl(G[W]);\F)$, where $G[W]$ is the subgraph induced by~$W$.
+\end{problem}
+
+\begin{problem}[Dynamic Vietoris--Rips Betti numbers]\label{prob:rips}
+Fix a field $\F$ and an integer $p\ge0$.
+The instance is a dimension $d\ge1$ and a set $X_{\cU}\subset\mathbb{Q}^d$ of $n$ points.
+The data structure maintains a set $X\subseteq X_{\cU}$, initially empty, under insertion and deletion of single points, and on query returns $\beta_p(\VR_1(X);\F)$.
+\end{problem}
+
+\begin{theorem}\label{thm:flag}
+Assume the \OMv\ conjecture, and let $\F$ be a field and $\eps>0$.
+For each of the following problems, no data structure with polynomial preprocessing time has amortized update time $O(n^{1/2-\eps})$ and query time $O(n^{1-\eps})$.
+In each problem, a query returns the first Betti number over~$\F$ of the complex named.
+\begin{enumerate}[label=(\roman*)]
+\item\label{it:flag-vertex} The clique complex $\Cl(G[W])$, where $G$ is a fixed graph with $n$ vertices and maximum degree bounded by an absolute constant, and an update inserts a vertex into $W$ or deletes one from it (Problem~\ref{prob:clique} with $p=1$).
+\item\label{it:flag-edge} The clique complex $\Cl(H)$, where $H$ is a spanning subgraph of a fixed graph $G$ as in~\ref{it:flag-vertex}, and an update inserts an edge of $G$ into $H$ or deletes one from it.
+\item\label{it:flag-metric} The Vietoris--Rips complex $\VR_1(X,\mathrm{dist})$, where $X$ is a fixed set of $n$ points, $\mathrm{dist}$ is a metric on $X$ with values in $\{1,2\}$, and an update changes the distance between one pair of points.
+\item\label{it:flag-euclid} The Vietoris--Rips complex $\VR_1(X)$ of Problem~\ref{prob:rips} with $d=O(\log n)$, even if all coordinates of the points have $O(\log n)$ bits.
+\end{enumerate}
+\end{theorem}
+
+The proof rests on barycentric subdivision.
+For a simplicial complex $\cU$ let $G_{\cU}$ be the \emph{comparability graph} of its face poset.
+Its vertices are the simplices of~$\cU$, and two simplices are adjacent when one is a proper face of the other.
+For a subcomplex $K\subseteq\cU$, the induced subgraph $G_{\cU}[K]$ is the comparability graph of the face poset of~$K$.
+Its cliques are exactly the chains $\sigma_0\subsetneq\dots\subsetneq\sigma_q$ of simplices of~$K$.
+So $\Cl(G_{\cU}[K])$ is the order complex of the face poset of~$K$, which is the barycentric subdivision $\mathrm{sd}(K)$~\cite{Koz08}.
+Since $\mathrm{sd}(K)$ is homeomorphic to~$K$,
+\begin{equation}\label{eq:sd}
+  \beta_p\bigl(\Cl(G_{\cU}[K])\bigr)\;=\;\beta_p(K)\qquad\text{for every subcomplex }K\subseteq\cU\text{ and every }p.
+\end{equation}
+
+\begin{proof}[Proof of Theorem~\ref{thm:flag}]
+Let $\cU$ be the bounded-degree universe of Theorem~\ref{thm:bounded-degree}.
+It has $n$ simplices, every vertex lies in $O(1)$ simplices, and the lower bound of Theorem~\ref{thm:bounded-degree}(i) for $\beta_1$ holds on it.
+In $G_{\cU}$ a simplex is adjacent only to its faces and to the simplices that contain it, so $G_{\cU}$ has maximum degree $O(1)$.
+
+For~\ref{it:flag-vertex} we maintain $W=K$.
+Inserting or deleting a simplex $\sigma$ of $K$ becomes inserting or deleting the vertex $\sigma$ of~$W$.
+By~\eqref{eq:sd} the queries agree.
+
+For~\ref{it:flag-edge} we maintain the spanning subgraph $H$ of $G_{\cU}$ whose edges are the edges of $G_{\cU}[K]$; the simplices of $\cU$ that are not in $K$ are isolated vertices of~$H$.
+When $\sigma$ is inserted into~$K$, all its proper faces lie in $K$ and none of its cofaces does, so the new edges of $H$ are the edges between $\sigma$ and its proper faces; there are at most six of them, because $\dim\cU=2$.
+A deletion removes the same edges.
+So every simplex update becomes at most six edge updates, and we query only after all of them have been carried out.
+At that moment $\Cl(H)$ is the disjoint union of $\Cl(G_{\cU}[K])$ and some isolated vertices, so $\beta_1(\Cl(H))=\beta_1(K)$ by~\eqref{eq:sd}.
+
+For~\ref{it:flag-metric} we take $X$ to be the vertex set of $G_{\cU}$ and set $\mathrm{dist}(x,x')=1$ if $xx'$ is an edge of the graph $H$ of~\ref{it:flag-edge}, and $\mathrm{dist}(x,x')=2$ for all other pairs of distinct points.
+Every symmetric function with values in $\{1,2\}$ satisfies the triangle inequality, because $2\le1+1$, so $\mathrm{dist}$ is a metric.
+By definition, $\VR_1(X,\mathrm{dist})=\Cl(H)$, and an edge update of $H$ is a single distance update.
+
+For~\ref{it:flag-euclid} we realize $G_{\cU}$ as a unit-ball graph: we map its vertices to points so that adjacent vertices are at distance less than~$1$ and nonadjacent vertices at distance greater than~$1$.
+Let $A_G$ be the adjacency matrix of $G=G_{\cU}$ and $\Delta$ its maximum degree.
+All eigenvalues of $A_G$ lie in $[-\Delta,\Delta]$, so $A_G+\lambda I$ with $\lambda=\Delta+1$ is positive definite.
+Write it as a Gram matrix with vectors $y_x\in\R^{n}$, one per vertex.
+Then $\lVert y_x-y_{x'}\rVert^2=2\lambda-2$ if $xx'$ is an edge and $2\lambda$ otherwise.
+By the Johnson--Lindenstrauss lemma~\cite{DG03}, a random linear map $\Phi\colon\R^{n}\to\R^{d}$ with $d=O(\lambda^2\log n)$ preserves all these squared distances up to a factor $1\pm1/(4\lambda)$ with high probability.
+It can be checked in polynomial time; we redraw it at most $n$ times, and if all draws fail, which happens with probability $2^{-\Omega(n)}$, the reduction gives up, which only adds this probability to its error.
+Edges then have squared length below $2\lambda-1$ and non-edges above it.
+Set $f(x)=\Phi(y_x)/\sqrt{2\lambda-1}$.
+Then $\lVert f(x)-f(x')\rVert<1$ for edges and $>1$ for non-edges.
+This is the argument of Frankl and Maehara~\cite{FM88}, who bound the sphericity of a graph in terms of its least eigenvalue.
+For every $W\subseteq V$, $\VR_1(f(W))=\Cl(G_{\cU}[W])$ as abstract complexes, because no pairwise distance equals~$1$.
+Inserting or deleting the vertex $\sigma$ thus becomes inserting or deleting the point $f(\sigma)$.
+Since $\Delta=O(1)$, we get $d=O(\log n)$.
+Because the squared distances are separated from the threshold by a constant margin after scaling, rounding all coordinates to rationals with $O(\log n)$ bits does not change the graph, so the points have a polynomial-size description.
+\end{proof}
+
+A query of the form $\beta_1(\VR_\varrho(X))$ at a fixed scale $\varrho$ is a persistent Betti number of the Vietoris--Rips filtration.
+Theorem~\ref{thm:flag} therefore also bounds every data structure that maintains the $H_1$-persistence of Vietoris--Rips filtrations of a dynamic point cloud, or of a finite metric space whose distances change one at a time, and can report the number of bars alive at a fixed scale.
+Applied to the bounded-degree universes of Theorem~\ref{thm:bdeg} for $p=2$ and of Corollary~\ref{cor:bdeg-allp} for $p\ge3$, the same proof gives statements~\ref{it:flag-vertex}--\ref{it:flag-euclid} for $\beta_p$, for every fixed $p\ge1$, with $2^{p+1}-2$ in place of six in~\ref{it:flag-edge}; Theorem~\ref{thm:acyclic} transfers in the same way to statement~\ref{it:flag-metric}, and to statements~\ref{it:flag-vertex} and~\ref{it:flag-edge} without the degree bound, because the cone vertex of its universe lies in $\Theta(n)$ simplices.
+Two questions remain open: whether the Vietoris--Rips statement holds in a fixed dimension $d\ge3$ (Section~\ref{sec:conclusion}), and whether it holds under point \emph{moves} at bounded speed rather than insertions and deletions.
+
+\subsection{Hardness with almost no homology}\label{sec:acyclic}
+
+The complexes built in the proof of Theorem~\ref{thm:omv} carry a lot of homology, because they contain the whole $1$-skeleton of the universe.
+Even without the unused edges the homology stays large.
+Let $A\in\{0,1\}^{r\times k}$, and let $K^-(A)$ be the subcomplex of $K(A;[r],[k])$ that consists of its triangles, all their faces, and the row cycles.
+We call it the \emph{lean} complex.
+In $K^-(A)$ all rows are active and all tethers are filled.
+The surface $\Sigma_j$ together with the filling $E_j$ of its tether is a sphere with one hole for every nonzero entry of column~$j$, and the row cycles are circles, so
+\begin{equation}\label{eq:euler-KA}
+  \chi(K^-(A))\;=\;\sum_{j=1}^{k}\bigl(2-\nnz(A_{\ast j})\bigr)\;=\;2k-\nnz(A),
+\end{equation}
+where $\nnz(\cdot)$ counts nonzero entries and $A_{\ast j}$ is column~$j$ of~$A$.
+Let $G_A$ denote the \emph{support graph} of $A$: the bipartite graph with a node $\rho_i$ for every row, a node $\gamma_j$ for every column, and an edge $\rho_i\gamma_j$ for every nonzero entry $A_{ij}$.
+Write $c(G_A)$ for its number of connected components.
+The components of $K^-(A)$ correspond to those of $G_A$, so \mbox{$\beta_0(K^-(A))=c(G_A)$}.
+Lemma~\ref{lem:crux} applies verbatim to the lean complex, because it only concerns triangles, and gives $\beta_2(K^-(A))=k-\rk A$.
+With~\eqref{eq:euler} we get
+\begin{equation}\label{eq:betti1-KA}
+  \beta_1(K^-(A))\;=\;(r-\rk A)\;+\;\bigl(\nnz(A)-r-k+c(G_A)\bigr).
+\end{equation}
+The second summand is the number of independent cycles of $G_A$, which is typically of order $n$; Edelsbrunner and Parsa make the same observation for their static complex~\cite[Remark~(2) after Theorem~3.1]{EP14}.
+So one may hope for a data structure whose cost depends on the homology of $K$ rather than on its size.
+Such a structure might be output-sensitive, with a running time that depends on the size of the answer.
+We now rule this out: small homology alone does not help.
+The lower bound survives on connected complexes with $\beta_1,\beta_2\le1$, and the question is only whether $H_1$ vanishes.
+
+\begin{theorem}[Deciding whether $H_1$ vanishes]\label{thm:acyclic}
+Assume the \OMv\ conjecture, and let $\F$ be a field and $\eps>0$.
+No data structure with polynomial preprocessing time maintains a subcomplex $K$ of a $2$-dimensional universe with $n$ simplices under simplex insertions and deletions and decides whether $H_1(K;\F)=0$, with amortized update time $O(n^{1/2-\eps})$ and query time $O(n^{1-\eps})$.
+This holds even under the promise that at every query $K$ is connected, $\chi(K)=1$, and $\beta_1(K)=\beta_2(K)\in\{0,1\}$.
+\end{theorem}
+
+Under the promise, $H_1(K;\F)=0$ holds exactly when $K$ is $\F$-acyclic, so the same lower bound applies to deciding $\F$-acyclicity.
+It also applies to approximation: a data structure that returns a number in $[\beta_1(K),c\,\beta_1(K)]$ for some factor $c\ge1$ returns~$0$ exactly when $\beta_1(K)=0$, so it decides whether $H_1(K;\F)=0$.
+Hence no multiplicative approximation of~$\beta_1$, with any factor, can be maintained within the time bounds of Theorem~\ref{thm:acyclic}.
+
+The proof combines three ingredients.
+The first removes the cycles of the support graph without touching the rank information.
+The second is a bordered matrix whose rank deficiency is a single bit.
+The third is a standard isolation step that turns that bit into the Boolean answer of \OuMv.
+
+\paragraph{Coning off the support graph.}
+Take $P=[r]\times[k]$ in Definition~\ref{def:gadget}, so that column $j$ has the triangle cycles $s^j_0,\dots,s^j_{r+1}$ and the socket between $s^j_t$ and $s^j_{t+1}$ belongs to row $t$ for $t\in[r]$.
+Let $a^j_t$ be the vertex $0$ of $s^j_t$, and let $c_i$ be the vertex $0$ of the row cycle $C_i$.
+The \emph{spine} $L(A)\subseteq K^-(A)$ is the graph on these vertices with two kinds of edges.
+The first kind consists of the edges $a^j_ta^j_{t+1}$ for $0\le t\le r$ and $j\in[k]$.
+Such an edge is the edge $a_0b_0$ of the cylinder of the socket between $s^j_t$ and $s^j_{t+1}$, and it survives the removal of the hole, so it lies in $K^-(A)$ whether the socket is sealed or tubed.
+The second kind is an \emph{attachment edge} $a^j_ic_i$ for every nonzero entry $A_{ij}$, namely the edge $h_0c_0$ of the tube of position $(i,j)$.
+Let $z$ be a new vertex.
+The \emph{coned complex} $\widehat K(A)$ is obtained from $K^-(A)$ by adding $z$, an edge $zv$ for every vertex $v$ of $L(A)$, and a triangle $ze$ for every edge $e$ of $L(A)$.
+In the coned complex a flip of $A_{ij}$ costs $14$ simplex updates.
+These are the $7$ triangles of Lemma~\ref{lem:locality}, the $6$ edges of the tube that are not edges of its hole $h$ or of $C_i$, and the cone triangle over the attachment edge.
+When the tube is inserted, we first delete the seal, then insert the six edges, the six tube triangles, and the cone triangle; a deletion of the tube proceeds in the reverse order, so every intermediate family is a subcomplex.
+Unlike in the proof of Theorem~\ref{thm:omv}, these flips change the $1$-skeleton.
+
+\begin{lemma}\label{lem:coning}
+For every field $\F$ and every matrix $A\in\{0,1\}^{r\times k}$,
+\[
+  \beta_0(\widehat K(A))=1,\qquad
+  \beta_1(\widehat K(A))=r-\rk A,\qquad
+  \beta_2(\widehat K(A))=k-\rk A .
+\]
+\end{lemma}
+
+\begin{proof}
+Write $K=K^-(A)$, $L=L(A)$, and $C=z\ast L$ for the cone, so that $\widehat K(A)=K\cup C$ and $K\cap C=L$.
+We first show that the inclusion $\iota\colon L\to K$ is injective on $H_1$ and bijective on $\widetilde H_0$.
+Define a vertex map $\varphi$ from $K$ to $G_A$ that sends every vertex of $C_i$ to $\rho_i$ and every other vertex of column~$j$ to $\gamma_j$; the latter include the vertices of the tether $\Lambda_j$ and the apices of the two cones of column~$j$.
+Every simplex of $K$ lies in one column surface together with its tether filling, or in one row cycle, or in the tube of a position $(i,j)$ with $A_{ij}=1$.
+In each case its image is a vertex or an edge of $G_A$, so $\varphi$ is simplicial.
+On $L$, the map $\varphi$ collapses the path $a^j_0a^j_1\cdots a^j_{r+1}$ of each column, which is a tree, to the node~$\gamma_j$, and it maps each attachment edge onto the corresponding edge of $G_A$.
+Collapsing disjoint trees is a homotopy equivalence, so $(\varphi\circ\iota)_*$ is an isomorphism on all homology groups.
+Hence $\iota_*\colon H_1(L)\to H_1(K)$ is injective, with image of dimension $\nnz(A)-r-k+c(G_A)$.
+For the same reason $\iota_*\colon\widetilde H_0(L)\to\widetilde H_0(K)$ is injective, and it is an isomorphism because both groups have dimension $c(G_A)-1$: the graph $L$ has $c(G_A)$ components, being homotopy equivalent to $G_A$, and so does $K$.
+
+The cone $C$ is contractible and $H_2(L)=0$, so the Mayer--Vietoris sequence of $K\cup C$ reads
+\begin{align*}
+  0\to H_2(K)\to H_2(K\cup C)\to H_1(L)&\xrightarrow{\;\iota_*\;}H_1(K)\to H_1(K\cup C)\\
+  &\to\widetilde H_0(L)\xrightarrow{\;\iota_*\;}\widetilde H_0(K)\to\widetilde H_0(K\cup C)\to0 .
+\end{align*}
+Since $\iota_*$ is injective on $H_1$ and bijective on $\widetilde H_0$, we get $H_2(K\cup C)\cong H_2(K)$, $\widetilde H_0(K\cup C)=0$, and $H_1(K\cup C)\cong H_1(K)/\iota_*H_1(L)$.
+Substituting $\beta_2(K)=k-\rk A$ and~\eqref{eq:betti1-KA} proves the lemma.
+\end{proof}
+
+\paragraph{A bordered matrix with a one-bit rank deficiency.}
+We use the Schur-complement identity of Lemma~\ref{lem:bordered}.
+
+For $M\in\{0,1\}^{\ell\times\ell}$ and $u,v\in\{0,1\}^{\ell}$ we use the $(2\ell+1)\times(2\ell+1)$ matrix $\mathrm{Bord}(M;u,v)$ below, whose upper left $2\ell\times2\ell$ block is the invertible matrix~$Y$ to which we apply Lemma~\ref{lem:bordered}:
+\[
+  \mathrm{Bord}(M;u,v)\;=\;\begin{pmatrix}I&M&0\\0&I&v\\u^{\top}&0&0\end{pmatrix},
+  \qquad
+  Y=\begin{pmatrix}I&M\\0&I\end{pmatrix},\quad
+  Y^{-1}=\begin{pmatrix}I&-M\\0&I\end{pmatrix}.
+\]
+To keep the field product apart from the Boolean product $u^{\top}Mv$ of \OuMv, we write $\mu_{\F}(u,v)=\sum_{i,j}u_iM_{ij}v_j$, evaluated in~$\F$.
+With $x=(u,0)$ and $w=(0,v)$ we get $x^{\top}Y^{-1}w=-\mu_{\F}(u,v)$.
+By Lemma~\ref{lem:bordered}, the rank of $\mathrm{Bord}(M;u,v)$ is $2\ell+1$ if $\mu_{\F}(u,v)\ne0$ and $2\ell$ otherwise.
+Lemma~\ref{lem:coning} therefore gives
+\begin{equation}\label{eq:acyclic-bit}
+  \beta_0=1,\qquad \beta_1=\beta_2=\bigl[\mu_{\F}(u,v)=0\bigr]
+  \qquad\text{for } K=\widehat K\bigl(\mathrm{Bord}(M;u,v)\bigr).
+\end{equation}
+So $K$ is $\F$-acyclic exactly when $\mu_{\F}(u,v)\neq0$.
+
+\paragraph{From the field product to the Boolean product.}
+The quantity $\mu_{\F}(u,v)$ in~\eqref{eq:acyclic-bit} is computed in $\F$, whereas \OuMv\ asks whether the submatrix $S=M[\supp u,\supp v]$ is nonzero.
+These can differ; over $\Ftwo$, for instance, the entries of $S$ may cancel in pairs.
+Random restrictions repair this.
+\begin{lemma}\label{lem:isolation}
+Let $S\in\{0,1\}^{a\times b}$ be nonzero, and let $\xi\in\{0,1\}^a$ and $\eta\in\{0,1\}^b$ be independent and uniformly random.
+Then $\Pr[\xi^{\top}S\eta\ne0\text{ in }\F]\ge1/4$ for every field~$\F$.
+\end{lemma}
+\begin{proof}
+The polynomial $f(\xi,\eta)=\sum_{i,j}S_{ij}\xi_i\eta_j$ is multilinear of degree~$2$, and it is nonzero because its coefficients are the entries of~$S$.
+A nonzero multilinear polynomial of degree~$d$ does not vanish on at least a $2^{-d}$ fraction of the Boolean cube.
+To see this, fix a monomial of maximal degree; for every assignment to the other variables, the restriction to the variables of that monomial is a nonzero multilinear polynomial in $d$ variables, which has a nonzero point among the $2^d$ assignments.
+\end{proof}
+
+\begin{proof}[Proof of Theorem~\ref{thm:acyclic}]
+Let $M\in\{0,1\}^{\ell\times\ell}$ be an \OuMv\ instance.
+The universe $\cU$ is the union of the coned complexes $\widehat K(\mathrm{Bord}(M;u,v))$ over all $u,v\in\{0,1\}^{\ell}$.
+It contains the seal and the tube at every border position and has $n=\Theta(\ell^2)$ simplices.
+We insert the simplices of $\widehat K(\mathrm{Bord}(M;0,0))$, which costs $O(\ell^2)$ updates.
+
+For a request $(u,v)$, we perform $T=\lceil 8\ln\ell\rceil+1$ independent probes.
+A probe draws uniform $\xi\in\{0,1\}^{\supp u}$ and $\eta\in\{0,1\}^{\supp v}$ and sets the border entries accordingly.
+It changes at most $2\ell$ entries, each by a constant number of simplex updates.
+It then asks whether $H_1(K)=0$.
+We answer~$1$ if and only if some probe finds $H_1(K)=0$.
+
+By~\eqref{eq:acyclic-bit}, a probe finds $H_1(K)=0$ exactly when $\xi^{\top}S\eta\ne0$, where $S=M[\supp u,\supp v]$.
+If $S=0$, no probe succeeds and the answer~$0$ is correct.
+If $S\ne0$, each probe succeeds with probability at least $1/4$ by Lemma~\ref{lem:isolation}.
+All $T$ probes then fail with probability at most $(3/4)^T<\ell^{-2}$.
+A union bound over the $\ell$ requests bounds the total error probability by $1/\ell$.
+
+At every query, $K$ is connected, $\beta_1(K)=\beta_2(K)\in\{0,1\}$, and $\chi(K)=\beta_0-\beta_1+\beta_2=1$, as promised.
+The $\ell$ requests use $O(\ell^2\log\ell)$ updates and $O(\ell\log\ell)$ queries.
+A data structure with the stated bounds would therefore solve \OuMv\ with polynomial preprocessing and computation time
+\[
+  O\bigl(\ell^2\log\ell\cdot n^{1/2-\eps}+\ell\log\ell\cdot n^{1-\eps}+\ell^2\log\ell\bigr)
+  \;=\;O\bigl(\ell^{3-\delta}\bigr)\qquad\text{for every }\delta<\min\{2\eps,1\},
+\]
+where the last term accounts for sampling the probes.
+This contradicts the \OMv\ conjecture~\cite{HKNS15}, which covers randomized algorithms with error probability at most $1/3$.
+The probes do not depend on the answers of the data structure, so the same argument applies to a randomized data structure that answers all queries of every fixed operation sequence correctly with probability at least $3/4$: the total error probability is then at most $1/4+1/\ell\le1/3$ for $\ell\ge12$.
+\end{proof}
+
+\begin{remark}
+Over $\Ftwo$, setting the border entries to $u$ and $v$ themselves makes a single query compute the parity $\mu_{\Ftwo}(u,v)$.
+Under the analogous conjecture for matrix--vector products over $\Ftwo$, the reduction is deterministic and needs one query per request.
+The cone vertex $z$ has degree $\Theta(n)$.
+We do not know whether bounded vertex degree, as in Theorem~\ref{thm:bounded-degree}, can be combined with bounded homology.
+\end{remark}
+
+\subsection{Scope of the lower bounds}\label{sec:lower-scope}
+
+The bounds do not cover the following settings.
+First, in the vineyard model~\cite{CEMS06}, an update transposes two simplices that are consecutive in a total order compatible with the filtration.
+A value update of Problem~\ref{prob:sublevel} can require up to $n-1$ such transpositions, so our bounds say nothing about the time per transposition.
+Second, for fully dynamic data structures with worst-case bounds, the only lower bounds that we obtain from the \OMv\ conjecture itself are those implied by Theorem~\ref{thm:omv}.
+Stronger worst-case bounds rest on the \uMv-hinted \uMv\ conjecture (Corollary~\ref{cor:hinted}), and their exponent depends on that of rectangular matrix multiplication.
+Third, the variants of the lower bound are proved in the degrees stated: bounded degree for every $p\ge1$, linear embeddings in $\R^4$ for $\beta_1$ and $\beta_2$, clique and Vietoris--Rips complexes for every $\beta_p$ with $p\ge1$, and the acyclicity test for~$H_1$.
+Finally, all these bounds are conditional; the only unconditional lower bound that we know is the $\Omega(\log n)$ cell-probe bound inherited from dynamic connectivity (Section~\ref{sec:easy-conn}).

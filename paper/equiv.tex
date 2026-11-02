@@ -1,0 +1,261 @@
+\section{Dynamic Betti numbers are equivalent to dynamic rank}\label{sec:equiv}
+
+This section proves that dynamic Betti numbers and dynamic rank of matrices with entries in $\{0,\pm1\}$ reduce to each other with constant overhead and a linear change in size (Theorem~\ref{thm:equiv} and Corollary~\ref{cor:equiv}); over $\Ftwo$ and over $\mathbb{F}_3$, every matrix has entries in $\{0,\pm1\}$.
+Section~\ref{sec:b2r} gives the easy direction, from Betti numbers to rank.
+The other direction rests on the gadget of Section~\ref{sec:gadget}.
+Every row of the matrix becomes a hollow triangle, every column becomes a punctured sphere assembled from constant-size pieces, and each entry decides whether a hole of the sphere of its column is closed off or joined by a tube to the triangle of its row (Figure~\ref{fig:gadget}).
+Section~\ref{sec:crux} proves that the $2$-cycles of the resulting complex correspond exactly to the linear dependencies among the active columns, restricted to the active rows, and Section~\ref{sec:equiv-thm} assembles the reductions.
+
+\subsection{From Betti numbers to rank}\label{sec:b2r}
+
+Let $\cU$ be a universe and $p\ge0$.
+For $q\ge1$ let $B_q$ be the boundary matrix of $\cU$ in dimension~$q$, with rows indexed by $\cU_{q-1}$ and columns by~$\cU_q$.
+For a subcomplex $K\subseteq\cU$ let $B_q^K$ be the matrix obtained from $B_q$ by replacing the columns of the $q$-simplices not in $K$ with zero columns.
+
+\begin{lemma}\label{lem:betti-to-rank}
+For every subcomplex $K\subseteq\cU$ and every $p\ge0$,
+\[
+  \beta_p(K)=n_p(K)-\rk\begin{pmatrix}B_p^K&0\\0&B_{p+1}^K\end{pmatrix},
+\]
+where $B_0^K$ is the empty matrix.
+Inserting or deleting a $q$-simplex with $q\ge1$ changes one column of $B_q^K$, and no other column of $B_p^K$ or $B_{p+1}^K$; inserting or deleting a vertex changes only~$n_0(K)$.
+\end{lemma}
+
+\begin{proof}
+The columns of $B_q^K$ indexed by $K_q$ form the matrix of $\bd_q$ on $K$, extended by rows for the $(q-1)$-simplices of $\cU$ that are not in $K$.
+These extra rows are zero in those columns, because every facet of a simplex of $K$ lies in~$K$.
+Adding zero rows and zero columns does not change the rank, so $\rk B_q^K=\rk\bd_q$, and the formula follows from~\eqref{eq:betti-rank}.
+The column of a $q$-simplex $\sigma$ is zero in $B_q^K$ if $\sigma\notin K$ and equals its column in $B_q$ otherwise, so updating $\sigma$ changes exactly that column.
+\end{proof}
+
+A column change of $B_q^K$ is a single switch, or at most $q+1$ entry updates.
+We call \emph{dynamic rank under switches} the variant of Problem~\ref{prob:rank} whose instance also contains a matrix $A_0\in\F^{r\times k}$, with $P=\supp(A_0)$, and in which $A=A_0$ throughout, so that the only updates are switches; its size is again $N=r+k+m$.
+So for fixed $p$, dynamic $\beta_p$ reduces to dynamic rank under switches with overhead $(1,1)$ and to dynamic rank with overhead $(p+2,1)$: one data structure for the block matrix of Lemma~\ref{lem:betti-to-rank} and a counter for $n_p(K)$ suffice.
+Combined with the fastest known dynamic-rank algorithm, this gives a randomized data structure with worst-case update time $O(n^{1.407})$ for every Betti number (Corollary~\ref{cor:upper} in Section~\ref{sec:lower-worst}).
+
+\subsection{The gadget}\label{sec:gadget}
+
+We now go the other way.
+Fix a $0/1$ matrix $A$ with $r$ rows and $k$ columns.
+We build a $2$-complex whose $2$-cycles encode the kernel of~$A$.
+The construction uses four building blocks, each attached to \emph{triangle cycles}.
+A triangle cycle $a=(a_0,a_1,a_2)$ consists of three vertices and the three edges $a_0a_1$, $a_1a_2$, $a_2a_0$; we call the triangle $a_0a_1a_2$ its \emph{filling}.
+Indices of vertices of a triangle cycle are taken modulo~$3$, and we write $uv$ for the edge $\{u,v\}$ and $uvw$ for the triangle $\{u,v,w\}$.
+\begin{itemize}
+\item The \emph{cone} on $a$ with apex $o$ is $\{o\,a_t\,a_{t+1} : t\in\Z_3\}$, a disk with boundary~$a$ (three triangles).
+\item The \emph{cylinder} between disjoint triangle cycles $a$ and $b$ is $\mathrm{Cyl}(a,b)=\{a_t\,a_{t+1}\,b_t,\; a_{t+1}\,b_t\,b_{t+1} : t\in\Z_3\}$, an annulus with boundary $a\sqcup b$ (six triangles).
+\item The \emph{punctured cylinder} $\mathrm{Cyl}^{\circ}(a,b)=\mathrm{Cyl}(a,b)\setminus\{h\}$ is the cylinder with the triangle \mbox{$h=a_0a_1b_0$} removed (five triangles). We call the triangle cycle $(a_0,a_1,b_0)$ its \emph{hole}.
+\item The \emph{tube} from the hole $h$ to a triangle cycle $c$ is $\mathrm{Cyl}(h,c)$ (six triangles).
+\end{itemize}
+A \emph{socket} between $a$ and $b$ consists of the punctured cylinder $\mathrm{Cyl}^{\circ}(a,b)$ and one or two \emph{attachments} at its hole: the \emph{seal}, which is the triangle~$h$, and the \emph{tube} $\mathrm{Cyl}(h,c)$ to a triangle cycle~$c$ disjoint from $a$ and~$b$.
+In every complex $K(A;R,J)$ below, exactly one attachment of each socket is present.
+With the seal, the socket is the annulus $\mathrm{Cyl}(a,b)$, and we call it \emph{sealed}; with the tube, it is a \emph{pair of pants}, a sphere with three holes, with boundary $a\sqcup b\sqcup c$ (see the proof of Lemma~\ref{lem:surface}), and we call it \emph{tubed}.
+Figure~\ref{fig:gadget} shows the whole construction schematically, and Figure~\ref{fig:socket} shows a socket and one column surface.
+
+
+\input{figures/fig-socket}
+
+\begin{definition}[The gadget]\label{def:gadget}
+Let $P\subseteq[r]\times[k]$ be a set of admissible positions, and for $j\in[k]$ let $S_j=\{i:(i,j)\in P\}$, listed in increasing order as $i_1<\dots<i_{d_j}$.
+The complex $\cU(P)$ consists of the following simplices, all on distinct vertices unless stated otherwise.
+\begin{itemize}
+\item For each row $i\in[r]$, a triangle cycle $C_i$, the \emph{row cycle}, and its filling $D_i$.
+\item For each column $j\in[k]$, a triangle cycle $\Lambda_j$, the \emph{tether}, and its filling $E_j$.
+\item For each column $j$, triangle cycles $s^j_0,s^j_1,\dots,s^j_{d_j+1}$, cones on $s^j_0$ and on $s^j_{d_j+1}$, a socket between $s^j_0$ and $s^j_1$ whose only attachment is the tube to~$\Lambda_j$, and, for every $t\in[d_j]$, a socket between $s^j_t$ and $s^j_{t+1}$ with both attachments, the seal and the tube to $C_{i_t}$, which we call the \emph{socket of position} $(i_t,j)$.
+\item All vertices and edges of the simplices above.
+\end{itemize}
+For a $0/1$ matrix $A$ with $\supp(A)\subseteq P$ and sets $R\subseteq[r]$, $J\subseteq[k]$, the complex $K(A;R,J)\subseteq\cU(P)$ consists of all vertices and edges of $\cU(P)$, the cones, the punctured cylinders, the tubes to the tethers, and
+\begin{itemize}
+\item for every $(i,j)\in P$, the seal of the socket of position $(i,j)$ if $A_{ij}=0$ and its tube to $C_i$ if $A_{ij}=1$;
+\item the filling $D_i$ for every row $i\notin R$, and the filling $E_j$ for every column $j\in J$.
+\end{itemize}
+\end{definition}
+
+So row $i$ is \emph{active} when its row cycle is hollow, that is, when its filling $D_i$ is absent, and column $j$ is \emph{active} when its tether is filled.
+We write $\KA=K(A;[r],[k])$ for the complex in which all rows and all columns are active.
+Row cycles and punctured spheres already appear in the static reduction~\cite[Theorem~3.1]{EP14}; the constant-size sockets and the switches make every matrix operation local (Lemma~\ref{lem:locality}).
+We write $\Sigma_j$ for the set of triangles of $K(A;R,J)$ that belong to column~$j$: its two cones, its punctured cylinders, its seals and tubes.
+Only admissible positions get sockets; a socket at a position that is always zero would always be sealed and would contribute nothing.
+The size of $\cU(P)$ is $O(r+k+|P|)$, and $\cU(P)$ can be constructed in linear time.
+
+\begin{lemma}\label{lem:surface}
+Let $A$ be a $0/1$ matrix with $\supp(A)\subseteq P$, let $R\subseteq[r]$ and $J\subseteq[k]$, and take $\Sigma_j$ in $K(A;R,J)$.
+For every $j\in[k]$, the triangles of $\Sigma_j$ form a connected triangulated surface of genus zero, namely a sphere with $1+|\{i:A_{ij}=1\}|$ holes, whose boundary is the disjoint union of the tether $\Lambda_j$ and the row cycles $C_i$ with $A_{ij}=1$.
+Every edge of $K(A;R,J)$ that is not on a row cycle or a tether lies in either no triangle or exactly two triangles of $K(A;R,J)$, and in the latter case both triangles belong to the same set~$\Sigma_j$.
+Any two triangles of $\Sigma_j$ are joined by a sequence of triangles of $\Sigma_j$ in which consecutive triangles share an edge that is not on a row cycle or a tether.
+\end{lemma}
+
+\begin{proof}
+Each cone is a disk, and a sealed socket is the annulus $\mathrm{Cyl}(a,b)$.
+A tubed socket between $a$ and $b$ with tube to $c$ is a pair of pants, which we check directly.
+The punctured cylinder alone is not a surface, because it is pinched at~$b_0$; the tube repairs this.
+In the tubed socket, the edges $a_1b_0$ and $b_0a_0$ of the hole lie in one triangle of $\mathrm{Cyl}^{\circ}(a,b)$ and in one triangle of the tube, the edge $a_0a_1$ lies only in the tube triangle $a_0a_1c_0$, and the \emph{link} of every vertex, the graph formed by the edges opposite to it in the triangles that contain it, is a single path; for instance, the link of $b_0$ is the path $b_1\,a_1\,c_1\,c_2\,a_0\,b_2$.
+The edges in only one triangle form the three disjoint cycles $a$, $b$, and~$c$, and the socket has $9$ vertices, $21$ edges, and $11$ triangles, so its Euler characteristic is $-1$; hence it is a sphere with three holes.
+The pieces of column~$j$ are glued in a chain along the complete triangle cycles $s^j_0,\dots,s^j_{d_j+1}$, so $\Sigma_j$ is a connected surface: a disk, followed by pairs of pants and annuli, followed by a disk.
+Its boundary consists of the far ends of its tubes, namely $\Lambda_j$ and the row cycles $C_i$ with $A_{ij}=1$.
+Each cone and each socket is connected through its interior edges, by direct inspection of the triangle lists, and consecutive pieces share the three edges of a cycle $s^j_t$, which are interior edges of~$\Sigma_j$; this gives the last claim.
+All vertices of column $j$ other than those of the row cycles are private to column~$j$.
+Hence an edge that lies on no row cycle and no tether has at least one private endpoint, so all triangles that contain it belong to one column $j$, and it is an interior edge of the surface $\Sigma_j$ or an edge in no triangle of~$K$.
+An interior edge of a triangulated surface lies in exactly two of its triangles.
+The fillings $D_i$ and $E_j$ use only edges of row cycles and tethers.
+\end{proof}
+
+\subsection{The crux: two-cycles are column dependencies}\label{sec:crux}
+
+Over $\Ftwo$ we may ignore orientations.
+For other fields we orient the triangles explicitly.
+For a triangle cycle $x$ let $[x]=x_0x_1+x_1x_2+x_2x_0$ denote the $1$-cycle that traverses it in index order.
+We orient the triangles of $\mathrm{Cyl}(a,b)$ as $a_t\,a_{t+1}\,b_t$ and $a_{t+1}\,b_{t+1}\,b_t$, for $t\in\Z_3$.
+A direct check shows that at every edge shared by two of these triangles the two induced orientations are opposite, and that ${\bd\,\mathrm{Cyl}(a,b)=[a]-[b]}$.
+The hole $h=a_0a_1b_0$ is one of these oriented triangles, so $\bd\,\mathrm{Cyl}^{\circ}(a,b)=[a]-[b]-[h]$, and the same rule gives $\bd\,\mathrm{Cyl}(h,c)=[h]-[c]$ for a tube.
+Writing $o$ for the apex and $a$ for the coned cycle, we orient the cone on $a=s^j_0$ as $o\,a_{t+1}\,a_t$, so that its boundary is $-[s^j_0]$, and the cone on the last cycle $a=s^j_{d_j+1}$ as $o\,a_t\,a_{t+1}$, so that its boundary is $+[s^j_{d_j+1}]$.
+Summing over the pieces of column~$j$, the contributions of the cycles $s^j_t$ and of the holes cancel, and the sum $[\Sigma_j]$ of the oriented triangles of $\Sigma_j$ satisfies $\bd[\Sigma_j]=-[\Lambda_j]-\sum_{i:\,A_{ij}=1}[C_i]$.
+Since the pieces induce opposite orientations on every cycle along which they are glued, this orientation is coherent: the two triangles at any interior edge of $\Sigma_j$ induce opposite orientations on it.
+We replace $[\Sigma_j]$ by its negative, and we orient the fillings so that $\bd D_i=[C_i]$ and $\bd E_j=[\Lambda_j]$.
+Then
+\begin{equation}\label{eq:surface-boundary}
+  \bd[\Sigma_j]=[\Lambda_j]+\sum_{i:\,A_{ij}=1}[C_i].
+\end{equation}
+All signs in~\eqref{eq:surface-boundary} are equal; this is what makes the construction work over every field.
+
+\begin{lemma}[Crux]\label{lem:crux}
+Let $\F$ be a field, let $A$ be a $0/1$ matrix with $\supp(A)\subseteq P$, and let $R\subseteq[r]$ and $J\subseteq[k]$.
+Then $K=K(A;R,J)$ satisfies
+\[
+  \beta_2(K;\F)\;=\;\dim Z_2(K;\F)\;=\;|J|-\rk_{\F}A[R,J].
+\]
+\end{lemma}
+
+\begin{proof}
+The first equality holds by~\eqref{eq:euler}, since $\dim K\le2$.
+Let $z$ be a $2$-cycle of~$K$.
+Consider an edge $e$ that lies in two triangles $\tau,\tau'$ of some~$\Sigma_j$ (Lemma~\ref{lem:surface}).
+No other triangle contains~$e$, and $\tau,\tau'$ induce opposite orientations on~$e$, so the coefficient of $e$ in $\bd z$ is the difference of the coefficients of $\tau$ and $\tau'$ in~$z$.
+Since $\bd z=0$, these coefficients agree.
+By the last claim of Lemma~\ref{lem:surface}, $z$ has the same coefficient $x_j$ on every triangle of~$\Sigma_j$.
+Every other triangle of $K$ is one of the fillings $D_i$ ($i\notin R$) or $E_j$ ($j\in J$).
+Therefore
+\[
+  z=\sum_{j\in[k]}x_j[\Sigma_j]+\sum_{i\notin R}y_iD_i+\sum_{j\in J}w_jE_j
+\]
+for some scalars $x_j,y_i,w_j\in\F$.
+By~\eqref{eq:surface-boundary},
+\begin{align*}
+  \bd z={}&\sum_{j\in J}(x_j+w_j)\,[\Lambda_j]+\sum_{j\notin J}x_j\,[\Lambda_j]\\
+  &+\sum_{i\in R}\Big(\sum_{j}A_{ij}x_j\Big)[C_i]+\sum_{i\notin R}\Big(\sum_{j}A_{ij}x_j+y_i\Big)[C_i].
+\end{align*}
+The row cycles and the tethers have pairwise disjoint edge sets, so $\bd z=0$ holds if and only if all coefficients vanish.
+For $j\notin J$ this forces $x_j=0$; for $j\in J$ it determines $w_j=-x_j$.
+For $i\notin R$ it determines $y_i$, and for $i\in R$ it says $\sum_{j\in J}A_{ij}x_j=0$.
+So $z\mapsto(x_j)_{j\in J}$ is a linear bijection from $Z_2(K)$ onto the kernel of $A[R,J]$, whose dimension is $|J|-\rk_{\F}A[R,J]$.
+\end{proof}
+
+Because $K(A;R,J)$ always contains the whole $1$-skeleton of $\cU(P)$, the number $\beta_0(K)$ and the numbers of vertices and edges do not change.
+By~\eqref{eq:euler},
+\begin{equation}\label{eq:b1-from-b2}
+  \beta_1(K)=\beta_1(\cU^{(1)})+\beta_2(K)-n_2(K),
+\end{equation}
+where $\cU^{(1)}$ is the $1$-skeleton of~$\cU(P)$.
+Here $\beta_1(\cU^{(1)})=\beta_0(\cU^{(1)})-n_0(\cU)+n_1(\cU)$ is the number of independent cycles of the graph $\cU^{(1)}$, a constant of the universe; intuitively, each triangle of $K$ either fills one of these cycles or creates a void.
+So $\beta_1$ and $\beta_2$ determine each other once the number $n_2(K)$ of triangles is known.
+
+\begin{lemma}[Locality]\label{lem:locality}
+Let $K=K(A;R,J)$.
+\begin{enumerate}[label=(\roman*)]
+\item If $A'$ is a $0/1$ matrix that differs from $A$ in exactly one entry $(i,j)\in P$, then $K(A';R,J)$ differs from $K$ in exactly $7$ triangles.
+\item If $R'=R\triangle\{i\}$ and $J'=J\triangle\{j\}$, then $K(A;R',J)$ and $K(A;R,J')$ each differ from $K$ in exactly one triangle.
+\end{enumerate}
+In both cases the change can be carried out by single-triangle insertions and deletions in any order, and every intermediate family of simplices is a subcomplex of~$\cU(P)$.
+\end{lemma}
+
+\begin{proof}
+Flipping $A_{ij}$ exchanges the seal of the socket of position $(i,j)$ (one triangle) for its tube (six triangles), or vice versa: one triangle is deleted and six are inserted, or the reverse.
+Switching row $i$ or column $j$ inserts or deletes the filling $D_i$ or~$E_j$.
+All edges and vertices of $\cU(P)$ are always present, so every set of triangles together with them is a subcomplex.
+\end{proof}
+
+\subsection{The equivalence}\label{sec:equiv-thm}
+
+\begin{theorem}[Rank-completeness]\label{thm:equiv}
+Let $\F$ be a field.
+\begin{enumerate}[label=(\roman*)]
+\item For every fixed $p\ge0$, dynamic $\beta_p$ over $\F$ reduces to dynamic rank under switches over $\F$ of a $\{0,\pm1\}$-matrix with overhead $(1,1)$, and to dynamic rank over $\F$ of $\{0,\pm1\}$-matrices with overhead $(p+2,1)$.
+\item\label{it:equiv-ii} Dynamic rank over $\F$ of $0/1$ matrices reduces to dynamic $\beta_2$ over $\F$ of $2$-complexes, and to dynamic $\beta_1$ over $\F$ of $2$-complexes, with overhead $(7,1)$. Every entry flip becomes $7$ simplex updates and every switch becomes one simplex update.
+\item For every fixed $p\ge1$, dynamic $\beta_1$ over $\F$ of $2$-complexes reduces to dynamic $\beta_{p}$ over $\F$ of $(p+1)$-complexes with overhead $(3^{p-1},1)$, and for every fixed $p\ge2$, dynamic $\beta_2$ over $\F$ of $2$-complexes reduces to dynamic $\beta_p$ over $\F$ of $p$-complexes with overhead $(3^{p-2},1)$.
+\item Dynamic rank over $\F$ of $\{0,\pm1\}$-matrices reduces to dynamic $\beta_2$ over $\F$ of $2$-complexes, and to dynamic $\beta_1$ over $\F$ of $2$-complexes, with overhead $(8,1)$.
+\end{enumerate}
+\end{theorem}
+
+Since boundary matrices have entries in $\{0,\pm1\}$, Theorem~\ref{thm:equiv} has the following consequence.
+
+\begin{corollary}\label{cor:equiv}
+Let $\F$ be a field, and let $p\ge1$ and $d\ge\max\{p,2\}$ be fixed.
+Dynamic rank over $\F$ of $\{0,\pm1\}$-matrices, dynamic $\beta_1$ over $\F$ of $2$-complexes, and dynamic $\beta_p$ over $\F$ of complexes of dimension at most~$d$ reduce to one another with constant overhead.
+Over $\Ftwo$ and over $\mathbb{F}_3$, this includes dynamic rank of all matrices.
+\end{corollary}
+
+Part~(iii) uses the suspension.
+The \emph{suspension} of a complex $K$ with two new vertices $a,b$ is
+\[
+  SK=K\cup\{\{a\},\{b\}\}\cup\{\sigma\cup\{a\},\,\sigma\cup\{b\}:\sigma\in K\}.
+\]
+
+\begin{lemma}\label{lem:suspension}
+For every nonempty subcomplex $K$ of a universe $\cU$, every field~$\F$, and every $p\ge0$, we have $\widetilde H_{p+1}(SK;\F)\cong\widetilde H_p(K;\F)$; moreover, $\beta_{p+1}(SK)=\beta_p(K)$ for every subcomplex $K$, empty or not, and every $p\ge1$.
+Inserting or deleting a simplex $\sigma$ of $K$ corresponds to inserting or deleting the three simplices $\sigma$, $\sigma\cup\{a\}$, $\sigma\cup\{b\}$ of $SK$, in an order in which every intermediate family is a subcomplex of~$S\cU$.
+\end{lemma}
+
+\begin{proof}
+If $K=\emptyset$, then $SK$ consists of two points, and $\beta_{p+1}(SK)=0=\beta_p(K)$ for $p\ge1$.
+Otherwise $SK$ is the union of the cones $aK=\{\{a\}\}\cup K\cup\{\sigma\cup\{a\}:\sigma\in K\}$ and $bK$, which are contractible, and $aK\cap bK=K$.
+The Mayer--Vietoris sequence in reduced homology~\cite[Section~2.2]{Hat02} therefore gives $\widetilde H_{p+1}(SK)\cong\widetilde H_p(K)$ for every $p\ge0$, and reduced and unreduced homology agree in positive degrees.
+For insertion, insert $\sigma$ first and then its two cones; for deletion, use the reverse order. Every intermediate family is then a subcomplex of~$S\cU$.
+\end{proof}
+
+\begin{proof}[Proof of Theorem~\ref{thm:equiv}]
+Part~(i) is Lemma~\ref{lem:betti-to-rank}.
+The rank instance is the block matrix of Lemma~\ref{lem:betti-to-rank}; its size is $O(n)$ for fixed~$p$.
+In the version with switches, the instance is the block matrix itself, preprocessing switches off all its columns, and afterwards only switches are used.
+In the version with entry updates, the admissible positions are the at most ${(p+1)\,n_p(\cU)}+{(p+2)\,n_{p+1}(\cU)}$ nonzero positions of the block matrix, and all entries are initially zero.
+Inserting or deleting a $q$-simplex for $q\in\{p,p+1\}$ switches one column, or updates its at most $q+1$ nonzero entries; the query subtracts the answer from a counter for~$n_p(K)$.
+
+For part~(ii), we map an instance $(r,k,P)$ to the universe $\cU(P)$ of Definition~\ref{def:gadget}.
+In preprocessing we insert the simplices of $K(0;[r],[k])$ in order of increasing dimension.
+We maintain the invariant $K=K(A;R,J)$, together with counters for $|J|$ and $n_2(K)$.
+By Lemma~\ref{lem:locality}, a flip is carried out by $7$ simplex updates and a switch by one.
+By Lemma~\ref{lem:crux}, $\rk A[R,J]=|J|-\beta_2(K)$, and by~\eqref{eq:b1-from-b2}, $\beta_2(K)=\beta_1(K)-\beta_1(\cU^{(1)})+n_2(K)$, so one query of either Betti number answers a rank query.
+The universe has $O(r+k+|P|)$ simplices.
+
+For part~(iii) the universe is the $(p-1)$-fold suspension $S^{p-1}\cU$ of~$\cU$ (the suspension applied $p-1$ times, with two new vertices each time), which has fewer than $3^{p-1}(n+1)$ simplices.
+In preprocessing we insert the $3^{p-1}-1$ simplices of the $(p-1)$-fold suspension of the empty complex, in order of increasing dimension.
+Afterwards each update of $K$ becomes $3^{p-1}$ updates, by Lemma~\ref{lem:suspension} applied $p-1$ times.
+The reduction from $\beta_2$ of $2$-complexes to $\beta_p$ of $p$-complexes is the same with the $(p-2)$-fold suspension.
+
+For part~(iv), let $\cU^{\pm}(P)$ consist of $\cU(P)$ and, for every $(i,j)\in P$, the \emph{reversed tube} $\mathrm{Cyl}(h,\bar C_i)$ with its edges, where $h$ is the hole of the socket of $(i,j)$ and $\bar C_i=(c_0,c_2,c_1)$ traverses $C_i=(c_0,c_1,c_2)$ backwards.
+For $A\in\{0,\pm1\}^{r\times k}$ with $\supp(A)\subseteq P$, the complex $K^{\pm}(A;R,J)$ is defined as in Definition~\ref{def:gadget}, with all vertices and edges of $\cU^{\pm}(P)$, and with the reversed tube instead of the tube at every position with $A_{ij}=-1$.
+A socket with a reversed tube is a socket tubed to the triangle cycle $\bar C_i$, so Lemma~\ref{lem:surface} holds with $A_{ij}=1$ replaced by $A_{ij}\neq0$.
+Betti numbers do not depend on orientations, so we may choose them separately for each complex: every triangle of $K^{\pm}(A;R,J)$ is oriented as the piece of $K^{\pm}(A;R,J)$ that contains it orients it.
+Since $\bd\,\mathrm{Cyl}(h,\bar C_i)=[h]+[C_i]$, the computation before~\eqref{eq:surface-boundary} gives $\bd[\Sigma_j]=[\Lambda_j]+\sum_iA_{ij}[C_i]$, and the proof of Lemma~\ref{lem:crux} gives $\beta_2(K^{\pm}(A;R,J);\F)=|J|-\rk_{\F}A[R,J]$.
+Changing an entry between $0$ and $\pm1$ exchanges the seal and a tube, which takes $7$ triangle updates; changing it between $1$ and $-1$ deletes $4$ triangles and inserts~$4$, because the two tubes share the two triangles $h_0h_1c_0$ and $h_2c_1c_2$.
+The universe still has $O(r+k+|P|)$ simplices, and the rest of the proof is as for part~(ii).
+\end{proof}
+
+\begin{proof}[Proof of Corollary~\ref{cor:equiv}]
+By Theorem~\ref{thm:equiv}(i), dynamic $\beta_p$ reduces to dynamic rank of the block matrix of Lemma~\ref{lem:betti-to-rank}, whose entries lie in $\{0,\pm1\}$.
+By part~(iv), dynamic rank of $\{0,\pm1\}$-matrices reduces to dynamic $\beta_1$ and to dynamic $\beta_2$ of $2$-complexes.
+For $p\le2$ we are done, since $d\ge2$; for $p\ge3$, part~(iii) reduces dynamic $\beta_2$ of $2$-complexes to dynamic $\beta_p$ of $p$-complexes, and $p\le d$.
+Over $\Ftwo$ and over $\mathbb{F}_3$, every matrix has entries in $\{0,\pm1\}$.
+\end{proof}
+
+Two consequences are worth stating separately.
+First, composing~(ii) and~(iv) with the switch-only version of~(i) for $p=2$ shows that switches alone are as powerful as entry updates.
+
+\begin{corollary}\label{cor:switch-only}
+Let $\F$ be a field.
+Dynamic rank over $\F$ of $0/1$ matrices reduces with overhead $(7,1)$, and dynamic rank over $\F$ of $\{0,\pm1\}$-matrices reduces with overhead $(8,1)$, to dynamic rank under switches over $\F$ of a $\{0,\pm1\}$-matrix with $O(N)$ nonzero entries, using column switches only.
+Over $\Ftwo$ and over $\mathbb{F}_3$, this applies to all matrices.
+\end{corollary}
+
+Second, if nothing is known in advance about the positions of the nonzero entries, we may take $P=[r]\times[k]$; then the universe has $\Theta(rk)$ simplices.
+This is the setting of the lower bounds in Section~\ref{sec:lower}.
+

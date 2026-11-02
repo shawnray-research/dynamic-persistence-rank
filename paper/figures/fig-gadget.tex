@@ -1,0 +1,64 @@
+% Figure: the gadget K(A), schematic overview (details in fig-socket.tex).
+% Requires tikz with the patterns library. Okabe--Ito colors: rows vermillion, columns blue.
+\begin{figure}[t]
+\centering
+\definecolor{gRow}{HTML}{D55E00}%
+\definecolor{gCol}{HTML}{0072B2}%
+\colorlet{gLine}{gCol!80!black}%
+\tikzset{
+  gsurf/.style={fill=gCol!10,draw=gLine,line width=0.6pt},
+  gtube/.style={double=gCol!24,double distance=4.4pt,line width=0.55pt,draw=gLine},
+  growcyc/.style={draw=gRow,line width=1.15pt,line join=round},
+  gseal/.style={fill=black!72,draw=black,line width=0.4pt},
+  ghole/.style={fill=white,draw=gLine,line width=0.5pt},
+  gteth/.style={fill=black!28,draw=black!80,line width=0.75pt,line join=round},
+  glab/.style={font=\small},
+  gsmall/.style={font=\footnotesize},
+  gpanel/.style={font=\small}}
+\providecommand\Description[2][]{}%
+\Description{Schematic of the gadget for a two-by-three matrix: two orange hollow triangles (row cycles) at the top, three blue spheres (column surfaces) at the bottom, blue tubes joining a hole of each sphere to the row cycles of the rows in which the column has a one, dark seals on the other holes, and a gray tether triangle below each sphere.}
+\begin{tikzpicture}[x=1cm,y=1cm]
+  %%% (a) the complex K(A) for a 2 x 3 matrix
+  \node[glab] at (0.95,2.55) {$A=\begin{pmatrix}\textcolor{gLine}{\mathbf 1}&\textcolor{gLine}{\mathbf 1}&\textcolor{black!45}{0}\\ \textcolor{black!45}{0}&\textcolor{gLine}{\mathbf 1}&\textcolor{gLine}{\mathbf 1}\end{pmatrix}$};
+  % tubes of the 1-entries (drawn first; surfaces and row cycles cover their ends)
+  \draw[gtube] (3.18,0.98) .. controls (3.25,2.05) and (4.3,2.3) .. (4.43,2.98);
+  \draw[gtube] (5.48,0.98) .. controls (5.41,2.05) and (4.8,2.3) .. (4.67,2.98);
+  \draw[gtube] (5.92,0.98) .. controls (5.99,2.05) and (6.6,2.3) .. (6.73,2.98);
+  \draw[gtube] (8.22,0.98) .. controls (8.15,2.05) and (7.1,2.3) .. (6.97,2.98);
+  % tubes to the tethers
+  \foreach \x in {3.4,5.7,8.0} \draw[gtube] (\x,0.1) -- (\x,-0.62);
+  % column surfaces
+  \foreach \x/\j in {3.4/1,5.7/2,8.0/3} {
+    \draw[gsurf] (\x,0.52) ellipse (0.9 and 0.54);
+    \fill[white,opacity=0.55] (\x-0.4,0.74) ellipse (0.2 and 0.085);
+    \node[glab] at (\x,0.38) {$\Sigma_{\j}$};
+  }
+  % holes: tubed (white rim) and sealed (dark)
+  \foreach \x in {3.18,5.48,5.92,8.22} \draw[ghole] (\x,1.0) ellipse (0.13 and 0.05);
+  \foreach \x in {3.62,7.78} \draw[gseal] (\x,0.99) ellipse (0.15 and 0.065);
+  % row cycles (hollow triangles: both rows active)
+  \foreach \x/\i in {4.55/1,6.85/2} {
+    \draw[growcyc] (\x-0.36,2.98) -- (\x+0.36,2.98) -- (\x,3.52) -- cycle;
+    \node[glab,text=gRow] at (\x,3.8) {$C_{\i}$};
+  }
+  % tethers with their fillings E_j (filled: column active)
+  \foreach \x/\j in {3.4/1,5.7/2,8.0/3} {
+    \draw[gteth] (\x-0.3,-0.62) -- (\x+0.3,-0.62) -- (\x,-1.08) -- cycle;
+    \node[gsmall] at (\x+0.58,-0.86) {$\Lambda_{\j}$};
+  }
+  % legend of (a)
+  \begin{scope}[shift={(9.35,1.05)}]
+    \draw[gtube] (0,1.0) -- (0.5,1.0); \node[gsmall,anchor=west] at (0.6,1.0) {tube: $A_{ij}=1$};
+    \draw[gseal] (0.25,0.5) ellipse (0.15 and 0.065); \node[gsmall,anchor=west] at (0.6,0.5) {seal: $A_{ij}=0$};
+    \draw[gteth] (0.1,0.13) -- (0.4,0.13) -- (0.25,-0.13) -- cycle; \node[gsmall,anchor=west] at (0.6,0.0) {filled tether};
+  \end{scope}
+\end{tikzpicture}
+\caption{The gadget $\KA$ for a $2\times3$ matrix~$A$, drawn schematically.
+Row~$i$ becomes a hollow triangle, the \emph{row cycle}~$C_i$.
+Column~$j$ becomes a surface~$\Sigma_j$, drawn as a sphere with one hole per admissible position (here every position is admissible) and one more hole, which is tubed to its \emph{tether}~$\Lambda_j$.
+The hole of row~$i$ is tubed to~$C_i$ if $A_{ij}=1$ and sealed if $A_{ij}=0$; the tubes and seals belong to~$\Sigma_j$.
+Filling a row cycle switches its row off, and filling a tether, as drawn, switches its column on.
+Here $\rk A=2$, and over~$\Ftwo$ the only nonzero $2$-cycle consists of the three surfaces and the three filled tethers; it encodes the fact that the three columns of~$A$ sum to zero, so $\beta_2(\KA)=3-\rk A=1$.
+Figure~\ref{fig:socket} shows how each surface is assembled from constant-size pieces.}
+\label{fig:gadget}
+\end{figure}
